@@ -1,4 +1,9 @@
 from random import choice
+
+farm_prod = 50
+iron_prod = 10
+gold_prod = 2
+
 class World():
     def __init__(self, players):
         self.size = 2 + len(players)
@@ -27,21 +32,19 @@ class World():
 
     def next_turn(self):
         for city in self.cities:
+            city.update_res()
             for task in city.current_tasks:
                 if task.type != None:
                     city.ongoing_tasks.append(task)
             city.current_tasks = []
             self.turn += 1
+            delete = []
             for task in city.ongoing_tasks:
                 if task.end_turn == self.turn:
-                    city.ongoing_tasks.remove(task)
-                    if task.type == "Build":
-                        print("Building yadi yada")     #Execute build -- dodaj to
-                    elif task.type == "Attack":
-                        print("Attacking yadi yada")     #Execute build -- dodaj to
-                    elif task.type == "Train":
-                        print("Training yadi yada")     #Execute build -- dodaj to
-            #Update resources --- dodaj to
+                    city.execute(task)
+                    delete.append(task)
+            city.ongoing_tasks = [item for item in city.ongoing_tasks if item not in delete]
+            
 
         
 
@@ -55,7 +58,7 @@ class City():
             self.buildings[i] = Building()
         self.army = Army()
         # Change default resource values
-        self.resources = (10, 10, 10)
+        self.resources = [10, 10, 10]
         self.current_tasks = []
         self.ongoing_tasks = []
 
@@ -91,6 +94,12 @@ class City():
         else:
             return True, None
 
+    def exists(self, building):
+        for b in self.buildings:
+            if self.buildings[b].type == building:
+                return True
+        return False
+
     def find_slot(self, building):
         for s in self.buildings:
             if self.buildings[s].type == building:
@@ -103,6 +112,34 @@ class City():
         type = self.buildings[slot].type
         lvl = self.buildings[slot].level
         self.buildings[slot] = Building(type, lvl+1)
+
+    def execute(self, task):
+        if task.type == "Build":
+            self.build(task.data[0], task.data[1])
+            print(f"Building {task.data[0]}")
+        elif task.type == "Upgrade":
+            self.upgrade(task.data[0])
+            print(f"Upgrading {task.data[0]}")
+        elif task.type == "Attack":
+            print("Attacking yadi yada")     #Execute build -- dodaj to
+        elif task.type == "Return":
+            print("Returning yadi yada")     #Execute -- dodaj to 
+        elif task.type == "Train":
+            self.army.units[task.data[0]] += task.data[1]
+            print(f"Training {task.data[1]} of {task.data[0]}")
+
+    def update_res(self):
+        gold = 0
+        iron = 0
+        food = 10
+        for s in self.buildings:
+            if self.buildings[s].type == "Farm":
+                food += self.buildings[s].level*farm_prod
+            elif self.buildings[s].type == "Iron Mine":
+                iron += self.buildings[s].level*iron_prod
+            elif self.buildings[s].type == "Gold Mine":
+                gold += self.buildings[s].level*gold_prod
+        self.resources = [self.resources[0] + food, self.resources[1] + iron, self.resources[2] + gold]
         
 class Task():
     def __init__(self, type=None, data=None, end_turn=None):
@@ -160,33 +197,41 @@ class Building():
     def __str__(self):
         return f"{self.type} (lvl {self.level})\n"
 
-
 '''
 world1 = World(["Babnik"])
 c = world1.spawn_city("Babnik", 6)
 print(world1.map[c])
-world1.map[c].current_tasks.append(Task("Build", "Ni važn for now", 7))
-world1.map[c].current_tasks.append(Task("Train", "Ni važn", 5))
+world1.map[c].current_tasks.append(Task("Build", ["Bank", 1], 7))
+world1.map[c].current_tasks.append(Task("Upgrade", ["Bank"], 7))
+world1.map[c].current_tasks.append(Task("Train", ["Unit2", 5], 5))
+world1.map[c].current_tasks.append(Task("Build", ["Iron Mine", 5], 4))
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 world1.next_turn()
 print(world1.map[c].ongoing_tasks)
+print(world1.map[c].resources)
 print(world1)
 print(world1.map[c])
 '''
