@@ -24,10 +24,29 @@ class World():
         self.empty_coords.remove(coords)
         self.map[coords] = city
         return coords
+
+    def next_turn(self):
+        for city in self.cities:
+            for task in city.current_tasks:
+                if task.type != None:
+                    city.ongoing_tasks.append(task)
+            city.current_tasks = []
+            self.turn += 1
+            for task in city.ongoing_tasks:
+                if task.end_turn == self.turn:
+                    city.ongoing_tasks.remove(task)
+                    if task.type == "Build":
+                        print("Building yadi yada")     #Execute build -- dodaj to
+                    elif task.type == "Attack":
+                        print("Attacking yadi yada")     #Execute build -- dodaj to
+                    elif task.type == "Train":
+                        print("Training yadi yada")     #Execute build -- dodaj to
+            #Update resources --- dodaj to
+
         
 
 class City():
-    def __init__(self, owner, size, coords =(0,0)):
+    def __init__(self, owner, size, coords=(0,0)):
         self.owner = owner
         self.size = size
         self.coords = coords
@@ -37,6 +56,8 @@ class City():
         self.army = Army()
         # Change default resource values
         self.resources = (10, 10, 10)
+        self.current_tasks = []
+        self.ongoing_tasks = []
 
     def buildings_to_str(self):
         string = ""
@@ -83,7 +104,17 @@ class City():
         lvl = self.buildings[slot].level
         self.buildings[slot] = Building(type, lvl+1)
         
+class Task():
+    def __init__(self, type=None, data=None, end_turn=None):
+        self.type = type
+        self.data = data
+        self.end_turn = end_turn
 
+    def __str__(self):
+        return f"Task of type {self.type}. Completed on turn {self.end_turn}."
+
+    def __repr__(self):
+        return f"Task({self.type}, {self.data}, {self.end_turn})"
 
 class Report():
     def __init__(self, a_vil, d_vil, turn, type):
@@ -134,12 +165,28 @@ class Building():
 world1 = World(["Babnik"])
 c = world1.spawn_city("Babnik", 6)
 print(world1.map[c])
-world1.map[c].build("Bank", 3)
-print(world1.map[c])
-world1.map[c].upgrade("Bank")
-print(world1.map[c])
-world1.map[c].train("Unit2", 10)
-world1.map[c].train("Spy", 1)
+world1.map[c].current_tasks.append(Task("Build", "Ni važn for now", 7))
+world1.map[c].current_tasks.append(Task("Train", "Ni važn", 5))
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
+print(world1)
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
+print(world1)
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
+print(world1)
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
+print(world1)
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
+print(world1)
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
+print(world1)
+world1.next_turn()
+print(world1.map[c].ongoing_tasks)
 print(world1)
 print(world1.map[c])
 '''
