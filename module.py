@@ -37,6 +37,7 @@ class World():
                     city.ongoing_tasks.append(task)
             city.current_tasks = []
             delete = []
+            city.ongoing_tasks.sort()
             for task in city.ongoing_tasks:
                 if task.end_turn == self.turn + 1:
                     city.execute(task)
@@ -115,9 +116,7 @@ class City():
             else:
                 result = self.combat_calculation(task)      # Calculate combat results
                 r_army = task.data[0] - result[0]           # Atk surviving army
-                rep = self.make_report(task, result)        # Make report for atk
-                if rep != None:
-                    task.data[2].reports.append(rep)        # Make report for def if spotted
+                self.make_report(task, result)              # Make reports
                 task.data[2].army -= result[1]              # Kill defending units
                 loot = [0, 0, 0]
                 if task.data[3] == "Raid":                  # only executes when raiding; other attacks dont yield any loot
@@ -128,7 +127,6 @@ class City():
 
                 # Make new task for troop return
                 self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", loot], 6))   # Change end turn !!!!
-            print("Troop movement yadi yada") 
         elif task.type == "Train":
             self.army.units[task.data[0]] += task.data[1]
             print(f"Training {task.data[1]} of {task.data[0]}")
@@ -171,7 +169,6 @@ class City():
             lvl = self.find_level(task.data[0])
             return values.building_costs[task.data[0]][lvl]
         elif task.type == "Train":
-            print(task.data)
             return [task.data[1] * x for x in values.unit_costs[task.data[0]]]
         else: 
             return [0,0,0]
@@ -235,7 +232,7 @@ class City():
                 conq = True
             return a_dead, d_dead, luck, True, conq
 
-    # Adds report to attacker village's reports and returns defender report to be manually appended to its reports (if not None)
+    # Adds report to attacker village's reports and returns defender report to be manually appended to its reports (if not, returns None)
     def make_report(self, task, combat_calc):
         a_city = task.data[1]
         d_city = task.data[2]
@@ -251,7 +248,8 @@ class City():
         r_atk = Report(a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, conq)
         r_def = Report(a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, conq)
         self.reports.append(r_atk)
-        return r_def if spotted else None
+        if spotted:
+            d_city.reports.append(r_def)
 
 class Task():
     def __init__(self, type=None, data=None, end_turn=None):
@@ -276,6 +274,9 @@ class Task():
         else:
             return f"Task({self.type}, Some data, {self.end_turn})"
 
+    def __lt__(self, other):
+        return self.end_turn < other.end_turn
+
 class Report():
     def __init__(self, a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, read = False):
         self.turn = turn
@@ -287,15 +288,26 @@ class Report():
         self.d_dead = d_dead
         self.luck = luck
         self.type = type
+        self.read = read
         
     def __repr__(self):
-        if self.type == "Attack":
-            return "Attavk blabla"
-        elif self.type == "Raid":
-            return "Raid blabla"
-        elif self.type == "Conquest":
-            return "Conquest blabla"
-        
+        return f"{self.type} on {self.d_city.coords}, turn {self.turn}."
+
+    def __str__(self):
+        headline = f"{self.type} on {self.d_city.coords}, turn {self.turn}."
+        if not self.read:
+            headline = "UNREAD -- " + headline
+        a_army = f"Attacking army: \nUnit1: {self.a_army.units['Unit1']}\nUnit2: {self.a_army.units['Unit2']}\nUnit3: {self.a_army.units['Unit3']}\nSpy: {self.a_army.units['Spy']}\nConqueror:{self.a_army.units['Conqueror']}."
+        a_dead = f"Attacking casualties: \nUnit1: {self.a_dead.units['Unit1']}\nUnit2: {self.a_dead.units['Unit2']}\nUnit3: {self.a_dead.units['Unit3']}\nSpy: {self.a_dead.units['Spy']}\nConqueror:{self.a_dead.units['Conqueror']}."
+        d_army = f"Attacking army: \nUnit1: {self.d_army.units['Unit1']}\nUnit2: {self.d_army.units['Unit2']}\nUnit3: {self.d_army.units['Unit3']}\nSpy: {self.d_army.units['Spy']}\nConqueror:{self.d_army.units['Conqueror']}."
+        d_dead = f"Attacking casualties: \nUnit1: {self.d_dead.units['Unit1']}\nUnit2: {self.d_dead.units['Unit2']}\nUnit3: {self.d_dead.units['Unit3']}\nSpy: {self.d_dead.units['Spy']}\nConqueror:{self.d_dead.units['Conqueror']}."
+        if self.luck > 0:
+            luck = f"Attackers were lucky ({round(self.luck*100, 2)}% bonus power)"
+        else:
+            luck = f"Attackers were unlucky ({round(-self.luck*100, 2)}% power deduction)"
+        return headline + a_army + a_dead + d_army + d_dead + luck
+
+
 class Army():
     def __init__(self, units = [3,0,0,0,0]):
         self.units = {
@@ -387,7 +399,7 @@ class Building():
 world1 = World(["Babnik", "NPC"])
 ca = world1.spawn_city("Babnik", 6)
 cd = world1.spawn_city("NPC", 6)
-print(world1.map[ca])
+
 
 ''' Task test
 t1 = Task("Train", ["Unit1", 3], 9)
