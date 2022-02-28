@@ -260,7 +260,15 @@ class Task():
         self.end_turn = end_turn
 
     def __str__(self):
-        return f"Task of type {self.type}. Completed on turn {self.end_turn}."
+        if self.type == "Train":
+            return f"Train {self.data[1]} x {self.data[0]}.\nCompleted on turn {self.end_turn}."
+        elif self.type == "Move Troops":
+            if self.data[3] == "Return":
+                return f"Troops returning from {self.data[1].coords} \nReturning army: {self.data[0]}.\nCompleted on turn {self.end_turn}"
+            else: 
+                return f"{self.data[3]}: {self.data[2].coords}\nArmy: {self.data[0]}\nCompleted on turn {self.end_turn}"
+        else:
+            return f"{self.type} {self.data[0]}. \nCompleted on turn {self.end_turn}"
 
     def __repr__(self):
         if self.type == "Move Troops":
@@ -331,10 +339,10 @@ class Army():
             self.units["Conqueror"] >= other.units["Conqueror"]
 
     def __repr__(self):
-        return f"Unit1: {self.units['Unit1']},\nUnit2: {self.units['Unit2']},\nUnit3: {self.units['Unit3']},\nSpy: {self.units['Spy']},\nConqueror: {self.units['Conqueror']}\n"
+        return f"Unit1: {self.units['Unit1']},\nUnit2: {self.units['Unit2']},\nUnit3: {self.units['Unit3']},\nSpy: {self.units['Spy']},\nConqueror: {self.units['Conqueror']}"
 
     def __str__(self):
-        return f"Unit1: {self.units['Unit1']},\nUnit2: {self.units['Unit2']},\nUnit3: {self.units['Unit3']},\nSpy: {self.units['Spy']},\nConqueror: {self.units['Conqueror']}\n"
+        return f"Unit1: {self.units['Unit1']},\nUnit2: {self.units['Unit2']},\nUnit3: {self.units['Unit3']},\nSpy: {self.units['Spy']},\nConqueror: {self.units['Conqueror']}"
     
     def fit_housing(self, space):
         total = self.count()
