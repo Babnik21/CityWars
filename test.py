@@ -1,9 +1,13 @@
 from random import shuffle, sample
+from math import ceil, floor
+import values
 
-class Drek():
+class Aa():
     def __init__(self, lst):
         self.lst = lst
 
-a = Drek([1, 2, 3, 4, 5])
-shuffle(a.lst)
-print(a.lst)
+y = (1, 2, 3, 4)
+
+z = tuple([n if n < 3 else n+10 for n in y])
+print(z)
+
