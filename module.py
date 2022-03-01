@@ -297,10 +297,10 @@ class Report():
         headline = f"{self.type} on {self.d_city.coords}, turn {self.turn}."
         if not self.read:
             headline = "UNREAD -- " + headline
-        a_army = f"Attacking army: \nUnit1: {self.a_army.units['Unit1']}\nUnit2: {self.a_army.units['Unit2']}\nUnit3: {self.a_army.units['Unit3']}\nSpy: {self.a_army.units['Spy']}\nConqueror:{self.a_army.units['Conqueror']}."
-        a_dead = f"Attacking casualties: \nUnit1: {self.a_dead.units['Unit1']}\nUnit2: {self.a_dead.units['Unit2']}\nUnit3: {self.a_dead.units['Unit3']}\nSpy: {self.a_dead.units['Spy']}\nConqueror:{self.a_dead.units['Conqueror']}."
-        d_army = f"Attacking army: \nUnit1: {self.d_army.units['Unit1']}\nUnit2: {self.d_army.units['Unit2']}\nUnit3: {self.d_army.units['Unit3']}\nSpy: {self.d_army.units['Spy']}\nConqueror:{self.d_army.units['Conqueror']}."
-        d_dead = f"Attacking casualties: \nUnit1: {self.d_dead.units['Unit1']}\nUnit2: {self.d_dead.units['Unit2']}\nUnit3: {self.d_dead.units['Unit3']}\nSpy: {self.d_dead.units['Spy']}\nConqueror:{self.d_dead.units['Conqueror']}."
+        a_army = f"Attacking army: \nUnit1: {self.a_army.units['Unit1']}\nUnit2: {self.a_army.units['Unit2']}\nUnit3: {self.a_army.units['Unit3']}\nSpy: {self.a_army.units['Spy']}\nConqueror: {self.a_army.units['Conqueror']}."
+        a_dead = f"Casualties: \nUnit1: {self.a_dead.units['Unit1']}\nUnit2: {self.a_dead.units['Unit2']}\nUnit3: {self.a_dead.units['Unit3']}\nSpy: {self.a_dead.units['Spy']}\nConqueror: {self.a_dead.units['Conqueror']}."
+        d_army = f"Defending army: \nUnit1: {self.d_army.units['Unit1']}\nUnit2: {self.d_army.units['Unit2']}\nUnit3: {self.d_army.units['Unit3']}\nSpy: {self.d_army.units['Spy']}\nConqueror: {self.d_army.units['Conqueror']}."
+        d_dead = f"Casualties: \nUnit1: {self.d_dead.units['Unit1']}\nUnit2: {self.d_dead.units['Unit2']}\nUnit3: {self.d_dead.units['Unit3']}\nSpy: {self.d_dead.units['Spy']}\nConqueror: {self.d_dead.units['Conqueror']}."
         if self.luck > 0:
             luck = f"Attackers were lucky ({round(self.luck*100, 2)}% bonus power)"
         else:
@@ -397,8 +397,12 @@ class Building():
 
 
 world1 = World(["Babnik", "NPC"])
-ca = world1.spawn_city("Babnik", 6)
-cd = world1.spawn_city("NPC", 6)
+ca = world1.spawn_city("Babnik", 12)
+cd = world1.spawn_city("NPC", 12)
+world1.map[ca].reports.append(Report(world1.map[ca], world1.map[cd], 2, "Attack", Army(), Army(), Army(), Army(), 0.05))
+world1.map[ca].build("Iron Mine", 1)
+world1.map[ca].build("Training Camp", 2)
+print(world1.map[ca].reports)
 
 
 ''' Task test
