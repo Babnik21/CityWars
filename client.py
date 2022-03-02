@@ -17,6 +17,17 @@ pacifico = pygame.font.Font('fonts/Pacifico.ttf', 30)
 pacifico_small = pygame.font.Font('fonts/Pacifico.ttf', 23)
 pacifico_huge = pygame.font.Font('fonts/Pacifico.ttf', 70)
 
+    # Draws next turn button in bottom left of the screen
+def draw_next_turn_button(win, mouse, c):
+    c2 = tuple([color + 50 if color < 205 else 255 for color in c])
+    pygame.draw.rect(win,c,[23,580,204,50])
+    if 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
+        pygame.draw.rect(win,c2,[23,580,204,50])
+    pygame.draw.rect(win,(255,255,255),[23,580,204,50], 2)
+
+    txt = pacifico.render("Next Turn", True, (0,0,0))
+    win.blit(txt, (55, 575))
+
 # Funciton that draws the menu at top right of the screen (rectangles + text)
 def draw_top_menu(win, mouse):
     # Rectangles
@@ -45,14 +56,14 @@ def draw_top_menu(win, mouse):
     win.blit(text_g, (width-270,0))
     win.blit(text_b, (width-370,0))
 
-# Draws bottom menu in city view -------            (text needs to be added)
+# Draws bottom menu in city view
 def draw_bottom_menu(win, mouse, c):
     pygame.draw.rect(win, (0,0,0), [width/2-300-2,height-100-2,604,54], 2)      # Border
     pygame.draw.rect(win,c,[width/2-300,height-100,150,50])                     # Rectangles
     pygame.draw.rect(win,c,[width/2-150,height-100,150,50])
     pygame.draw.rect(win,c,[width/2,height-100,150,50])
     pygame.draw.rect(win,c,[width/2+150,height-100,150,50])
-    c2 = tuple([color + 50 if color < 205 else color for color in c])       # Change color for highlighted option
+    c2 = tuple([color + 50 if color < 205 else 255 for color in c])       # Change color for highlighted option
 
     # Highlight hovered
     if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
@@ -412,6 +423,7 @@ def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
         win.fill((255,0,0))
         draw_reports(win, mouse, city)
         draw_bottom_menu(win, mouse, (255, 100, 100))
+        draw_next_turn_button(win, mouse, (255, 100, 100))
     elif view == 2:
         win.fill((0,255,0))
         if task != None:
@@ -423,11 +435,13 @@ def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
         draw_city(win, mouse, city)
         draw_tasks(win, mouse, city)
         draw_bottom_menu(win, mouse, (100, 255, 100))
+        draw_next_turn_button(win, mouse, (100, 255, 100))
     elif view == 3:
         win.fill((0,0,255))
         draw_map(win, mouse, world1, topleft)
         draw_map_move_buttons(win, mouse)
         draw_bottom_menu(win, mouse, (100, 100, 255))
+        draw_next_turn_button(win, mouse, (100, 100, 255))
     elif view == 4:
         win.fill((255,0,0))
         draw_full_report(win, mouse, selected)
