@@ -17,6 +17,13 @@ pacifico = pygame.font.Font('fonts/Pacifico.ttf', 30)
 pacifico_small = pygame.font.Font('fonts/Pacifico.ttf', 23)
 pacifico_huge = pygame.font.Font('fonts/Pacifico.ttf', 70)
 
+
+    # Draws error when trying to upgrade if not allowed to
+def draw_error(win, err):
+    # Error
+    e = roboto.render(err, True, (255, 0, 0))
+    win.blit(e, (width-210, 570))
+
     # Draws next turn button in bottom left of the screen
 def draw_next_turn_button(win, mouse, c):
     c2 = tuple([color + 50 if color < 205 else 255 for color in c])
@@ -333,9 +340,7 @@ def draw_training_menu(win, mouse, task, err):
     amount = roboto.render(f"Amount: {task.data[1]}", True, (0,0,0))
     win.blit(amount, (width-210, 230))
 
-    # Error
-    e = roboto.render(err, True, (255, 0, 0))
-    win.blit(e, (width-210, 570))
+    draw_error(win, err)
 
     # Buttons
     pygame.draw.rect(win,(255,255,255),[width-187,370,50,50], 2)          # B-1
@@ -405,9 +410,7 @@ def draw_building_menu(win, mouse, task, err, b_page):
     confirm = pacifico.render("Confirm", True, (0,0,0))
     win.blit(confirm, (width-178, 482))
 
-    # Error
-    e = roboto.render(err, True, (255, 0, 0))
-    win.blit(e, (width-210, 570))
+    draw_error(win, err)
 
 
 
@@ -431,6 +434,8 @@ def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
                 draw_training_menu(win, mouse, task, err)
             if task.type == "Build":
                 draw_building_menu(win, mouse, task, err, b_page)
+            if task.type == "Upgrade":
+                draw_error(win, err)
         draw_res(win, city)
         draw_city(win, mouse, city)
         draw_tasks(win, mouse, city)
@@ -531,8 +536,13 @@ def main():
                             pass
                     elif selected.level < 5:
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
-                            # Upgrade the building
-                            pass
+                            task = Task("Upgrade", [selected.type], 2)
+                            res, err = city.required_res(task), ""
+                            if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2]:
+                                err = "Need more resources!"
+                            else:
+                                # Add task to current tasks
+                                pass
                     if selected.type in ["Training Camp", "Factory", "Range", "Military HQ", "Agency"]:
                         helper_dict = {"Training Camp": "Infantryman", "Range": "Sniper", "Factory": "Tank", "Agency": "Spy", "Military HQ": "General"}
                         if width/2-150 <= mouse[0] <= width/2 and height-100 <= mouse[1] <= height-50:              # Menu button 2
@@ -677,9 +687,10 @@ def main():
 
 
 
-'''
-tasks = [Task(type="Build", data=["Iron Mine", 2], end_turn=3), Task(type="Upgrade",data=["Iron Mine"], end_turn=2), Task(type="Train", data=["Spy", 5], end_turn=7)]
-tasks2 = [Task(type="Build", data=["Iron Mine", 2], end_turn=3),Task(type="Upgrade",data=["Iron Mine"], end_turn=2), Task(type="Train",data=["Spy", 5], end_turn=7), Task(type="Move Troops", data=[Army([10, 10, 0, 0, 0]), world1.map[ca], world1.map[cd], "Attack"], end_turn=9)]
+''' Za odštevanje resourcov
+res = self.required_res(Task("Upgrade", [b], 0))
+self.resources = [self.resources[0] - res[0], self.resources[1] - res[1], self.resources[2] - res[2]]
+
 '''
 
 
