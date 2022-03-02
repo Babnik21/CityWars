@@ -324,7 +324,7 @@ def draw_training_menu(win, mouse, task, err):
 
     # Error
     e = roboto.render(err, True, (255, 0, 0))
-    win.blit(e, (width-210, 260))
+    win.blit(e, (width-210, 570))
 
     # Buttons
     pygame.draw.rect(win,(255,255,255),[width-187,370,50,50], 2)          # B-1
@@ -355,10 +355,56 @@ def draw_training_menu(win, mouse, task, err):
     confirm = pacifico.render("Confirm", True, (0,0,0))
     win.blit(confirm, (width-178, 482))
 
+    # Draws menu on the right in city view
+def draw_building_menu(win, mouse, task, err, b_page):
+    pygame.draw.rect(win,(255,255,255),[width-227,175,204,384], 2)          # Border
+
+    # Top text
+    txt = task.data[0] if task.data[0] != "Empty" else ""
+    b_text = roboto.render("Building "+txt, True, (0,0,0))
+    win.blit(b_text, (width-210, 180))
+
+    # Option buttons and text
+    for b, i in zip(building_costs, range(len(building_costs))):
+        if i in range(8*(b_page), 8*(b_page+1)):
+            pygame.draw.rect(win,(255,255,255),[width-205,210+30*(i%8),160,28], 2)
+            if width-205 <= mouse[0] <= width-45 and 210+30*(i%8) <= mouse[1] <= 238+30*(i%8):
+                pygame.draw.rect(win,(250,205,50),[width-205,210+30*(i%8),160,28], 2)
+            txt = b_text = roboto_small.render(b, True, (0,0,0))
+            win.blit(txt, (width-160, 215+30*(i%8)))
+
+    # Next and prev page buttons
+    pygame.draw.rect(win,(255,255,255),[width-195,455,68,25], 2)          # B-1
+    if width-195 <= mouse[0] <= width-137 and 455 <= mouse[1] <= 480:
+        pygame.draw.rect(win,(250,205,50),[width-195,455,68,25], 2)        # B-1
+    pygame.draw.rect(win,(255,255,255),[width-125,455,68,25], 2)          # B0
+    if width-125 <= mouse[0] <= width-67 and 455 <= mouse[1] <= 480:
+        pygame.draw.rect(win,(250,205,50),[width-125,455,68,25], 2)          # B0
+    
+    # Confirm button
+    pygame.draw.rect(win,(255,255,255),[width-202,490,150,50], 2)          # B confirm
+    if width-202 <= mouse[0] <= width-52 and 490 <= mouse[1] <= 540:
+        pygame.draw.rect(win,(250,205,50),[width-202,490,150,50], 2)          # B confirm
+
+    # Next, prev and confirm text
+    prev = roboto_small.render("Prev", True, (0,0,0))
+    win.blit(prev, (width-180, 460))
+    next = roboto_small.render("Next", True, (0,0,0))
+    win.blit(next, (width-110, 460))
+    confirm = pacifico.render("Confirm", True, (0,0,0))
+    win.blit(confirm, (width-178, 482))
+
+    # Error
+    e = roboto.render(err, True, (255, 0, 0))
+    win.blit(e, (width-210, 570))
+
+
+
+
 
 
 # Updates display (GUI)
-def redraw_window(win, view, mouse, selected, city, topleft, task, err):
+def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
     if view == 0:
         win.fill((255, 255, 255))
         draw_start_menu(win, mouse)
@@ -371,6 +417,8 @@ def redraw_window(win, view, mouse, selected, city, topleft, task, err):
         if task != None:
             if task.type == "Train":
                 draw_training_menu(win, mouse, task, err)
+            if task.type == "Build":
+                draw_building_menu(win, mouse, task, err, b_page)
         draw_res(win, city)
         draw_city(win, mouse, city)
         draw_tasks(win, mouse, city)
@@ -405,11 +453,12 @@ def main():
     topleft = (-3, -2)
     task = None
     err = ""
+    b_page = 0
 
     while run:
         clock.tick(60)
         mouse = pygame.mouse.get_pos()
-        redraw_window(win, view, mouse, selected, city, topleft, task, err)
+        redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page)
         
         for event in pygame.event.get():
 
@@ -464,7 +513,7 @@ def main():
                 elif isinstance(selected, Building):
                     if selected.type == "Empty":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
-                            # Build a building
+                            task = Task("Build", ["Empty", selected.slot], 2)                                                     # Change end turn calculation
                             pass
                     elif selected.level < 5:
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
@@ -544,6 +593,35 @@ def main():
                                 err = ""
                                 # Confirm task and add to current tasks
                                 pass
+                        
+                        # Building
+                        elif task.type == "Build":
+
+                            # Building selection
+                            for b, i in zip(building_costs, range(len(building_costs))):
+                                if i in range(8*(b_page), 8*(b_page+1)):
+                                    if width-205 <= mouse[0] <= width-45 and 210+30*(i%8) <= mouse[1] <= 238+30*(i%8):
+                                        task.data[0], err = b, ""
+                            
+                            # Prev/Next button
+                            if width-195 <= mouse[0] <= width-137 and 455 <= mouse[1] <= 480:
+                                b_page, err = 0, ""
+                            if width-125 <= mouse[0] <= width-67 and 455 <= mouse[1] <= 480:
+                                b_page, err = 1, ""
+
+                            # Confirmation
+                            if width-202 <= mouse[0] <= width-52 and 490 <= mouse[1] <= 540:
+                                if task.data[0] == "Empty":
+                                    err = "Select building!"
+                                elif task.data[0] in [b.type for b in list(city.buildings.values())]:
+                                    err = "Already built!"
+                                else:
+                                    res, err = city.required_res(task), ""
+                                    if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2]:
+                                        err = "Need more resources!"
+                                    else:
+                                        err = ""
+                                        # Confirm task and add to current tasks
 
                 elif view == 3:
                     # Selecting a city:

@@ -6,7 +6,6 @@ class Aa():
     def __init__(self, lst):
         self.lst = lst
 
-x, y = (4,3)
-for i in range(x):
-    for j in range(y):
-        print(4*j + i + 1)
+x = {1: "goo", 2: "Drek"}
+lst = list(x.values())
+print(lst)

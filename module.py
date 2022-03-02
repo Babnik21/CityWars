@@ -52,7 +52,7 @@ class City():
         self.coords = coords
         self.buildings = {}
         for i in range(size+1):
-            self.buildings[i] = Building()
+            self.buildings[i] = Building(slot=i)
         self.army = Army()
         # Change default resource values
         self.resources = [10, 10, 10]
@@ -76,7 +76,7 @@ class City():
 
     def build(self, b, slot):
         # Dodaj da odšteje surovine
-        self.buildings[slot] = Building(b, 1)
+        self.buildings[slot] = Building(b, 1, slot)
 
     def find_slot(self, building):
         for s in self.buildings:
@@ -95,7 +95,7 @@ class City():
         slot = self.find_slot(b)
         type = self.buildings[slot].type
         lvl = self.buildings[slot].level
-        self.buildings[slot] = Building(type, lvl+1)
+        self.buildings[slot] = Building(type, lvl+1, slot)
 
     # Main method for executing tasks
     def execute(self, task):
@@ -139,12 +139,20 @@ class City():
         for s in self.buildings:
             if self.buildings[s].type == "Farm":
                 food += values.farm_prod[self.buildings[s].level]
+                if food + self.resources[0] > 200 + values.warehouse_capacity[self.find_level("Warehouse")]:
+                    food = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0]
             elif self.buildings[s].type == "Bakery":
                 food += values.bakery_prod[self.buildings[s].level]
+                if food + self.resources[0] > 200 + values.warehouse_capacity[self.find_level("Warehouse")]:
+                    food = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0]
             elif self.buildings[s].type == "Iron Mine":
                 iron += values.iron_prod[self.buildings[s].level]
+                if iron + self.resources[1] > 200 + values.warehouse_capacity[self.find_level("Warehouse")]:
+                    iron = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[1]
             elif self.buildings[s].type == "Gold Mine":
                 gold += values.gold_prod[self.buildings[s].level]
+                if gold + self.resources[2] > 10 + values.warehouse_capacity[self.find_level("Bank")]:
+                    gold = values.warehouse_capacity[self.find_level("Bank")] - self.resources[2]
         self.resources = [self.resources[0] + food, self.resources[1] + iron, self.resources[2] + gold]
 
     # Adds resources
@@ -387,9 +395,10 @@ class Army():
         return sum(self.units[u] for u in self.units)
 
 class Building():
-    def __init__(self, type="Empty", level=0):
+    def __init__(self, type="Empty", level=0, slot=1):
         self.type = type
         self.level = level
+        self.slot = slot
         self.img = "Dodaj path do slike glede na type"    ##
 
     def __str__(self):
