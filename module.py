@@ -70,12 +70,9 @@ class City():
         return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def train(self, units, num):
-        # Dodaj še: Check if enough available resources and training camp is built, deduct resources:
-        if True:
-            self.army.train(units, num)
+        self.army.train(units, num)
 
     def build(self, b, slot):
-        # Dodaj da odšteje surovine
         self.buildings[slot] = Building(b, 1, slot)
 
     def find_slot(self, building):
@@ -91,7 +88,6 @@ class City():
         return 0
 
     def upgrade(self, b):
-        # Dodaj da odšteje surovine
         slot = self.find_slot(b)
         type = self.buildings[slot].type
         lvl = self.buildings[slot].level
@@ -315,7 +311,6 @@ class Report():
             luck = f"Attackers were unlucky ({round(-self.luck*100, 2)}% power deduction)"
         return headline + a_army + a_dead + d_army + d_dead + luck
 
-
 class Army():
     def __init__(self, units = [3,0,0,0,0]):
         self.units = {
@@ -414,7 +409,7 @@ world1.map[ca].upgrade("Warehouse")
 world1.map[ca].build("Bank", 3)
 world1.map[ca].upgrade("Bank")
 world1.map[ca].build("Training Camp", 2)
-world1.map[ca].resources = [1000,1000,150]
+world1.map[ca].resources = [300,300,20]
 print(world1.map[ca].reports)
 
 
