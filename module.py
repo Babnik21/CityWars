@@ -228,7 +228,7 @@ class City():
                 rate = a_pow/d_pow
                 a_dead = task.data[0]
                 d_dead = task.data[2].army * rate
-            if task.data[3] == "Conquest" and task.data[0].units["Conqueror"] > d_dead.units["Conqueror"]:
+            if task.data[3] == "Conquest" and task.data[0].units["General"] > d_dead.units["General"]:
                 conq = True
             return a_dead, d_dead, luck, True, conq
 
@@ -297,10 +297,10 @@ class Report():
         headline = f"{self.type} on {self.d_city.coords}, turn {self.turn}."
         if not self.read:
             headline = "UNREAD -- " + headline
-        a_army = f"Attacking army: \nUnit1: {self.a_army.units['Unit1']}\nUnit2: {self.a_army.units['Unit2']}\nUnit3: {self.a_army.units['Unit3']}\nSpy: {self.a_army.units['Spy']}\nConqueror: {self.a_army.units['Conqueror']}."
-        a_dead = f"Casualties: \nUnit1: {self.a_dead.units['Unit1']}\nUnit2: {self.a_dead.units['Unit2']}\nUnit3: {self.a_dead.units['Unit3']}\nSpy: {self.a_dead.units['Spy']}\nConqueror: {self.a_dead.units['Conqueror']}."
-        d_army = f"Defending army: \nUnit1: {self.d_army.units['Unit1']}\nUnit2: {self.d_army.units['Unit2']}\nUnit3: {self.d_army.units['Unit3']}\nSpy: {self.d_army.units['Spy']}\nConqueror: {self.d_army.units['Conqueror']}."
-        d_dead = f"Casualties: \nUnit1: {self.d_dead.units['Unit1']}\nUnit2: {self.d_dead.units['Unit2']}\nUnit3: {self.d_dead.units['Unit3']}\nSpy: {self.d_dead.units['Spy']}\nConqueror: {self.d_dead.units['Conqueror']}."
+        a_army = f"Attacking army: \nInfantryman: {self.a_army.units['Infantryman']}\nSniper: {self.a_army.units['Sniper']}\nTank: {self.a_army.units['Tank']}\nSpy: {self.a_army.units['Spy']}\nGeneral: {self.a_army.units['General']}."
+        a_dead = f"Casualties: \nInfantryman: {self.a_dead.units['Infantryman']}\nSniper: {self.a_dead.units['Sniper']}\nTank: {self.a_dead.units['Tank']}\nSpy: {self.a_dead.units['Spy']}\nGeneral: {self.a_dead.units['General']}."
+        d_army = f"Defending army: \nInfantryman: {self.d_army.units['Infantryman']}\nSniper: {self.d_army.units['Sniper']}\nTank: {self.d_army.units['Tank']}\nSpy: {self.d_army.units['Spy']}\nGeneral: {self.d_army.units['General']}."
+        d_dead = f"Casualties: \nInfantryman: {self.d_dead.units['Infantryman']}\nSniper: {self.d_dead.units['Sniper']}\nTank: {self.d_dead.units['Tank']}\nSpy: {self.d_dead.units['Spy']}\nGeneral: {self.d_dead.units['General']}."
         if self.luck > 0:
             luck = f"Attackers were lucky ({round(self.luck*100, 2)}% bonus power)"
         else:
@@ -311,50 +311,50 @@ class Report():
 class Army():
     def __init__(self, units = [3,0,0,0,0]):
         self.units = {
-            "Unit1": units[0],
-            "Unit2": units[1],
-            "Unit3": units[2],
+            "Infantryman": units[0],
+            "Sniper": units[1],
+            "Tank": units[2],
             "Spy": units[3],
-            "Conqueror": units[4]
+            "General": units[4]
         }
 
     def __eq__(self, other):
         return self.units == other.units
 
     def __add__(self, other):
-        return Army([self.units["Unit1"]+other.units["Unit1"],
-                        self.units["Unit2"]+other.units["Unit2"],
-                        self.units["Unit3"]+other.units["Unit3"],
+        return Army([self.units["Infantryman"]+other.units["Infantryman"],
+                        self.units["Sniper"]+other.units["Sniper"],
+                        self.units["Tank"]+other.units["Tank"],
                         self.units["Spy"]+other.units["Spy"],
-                        self.units["Conqueror"]+other.units["Conqueror"]])
+                        self.units["General"]+other.units["General"]])
 
     def __sub__(self, other):
-        return Army([self.units["Unit1"]-other.units["Unit1"],
-                        self.units["Unit2"]-other.units["Unit2"],
-                        self.units["Unit3"]-other.units["Unit3"],
+        return Army([self.units["Infantryman"]-other.units["Infantryman"],
+                        self.units["Sniper"]-other.units["Sniper"],
+                        self.units["Tank"]-other.units["Tank"],
                         self.units["Spy"]-other.units["Spy"],
-                        self.units["Conqueror"]-other.units["Conqueror"]])
+                        self.units["General"]-other.units["General"]])
 
     def __mul__(self, other):
-        unit1 = ceil(self.units["Unit1"] * other)
-        unit2 = ceil(self.units["Unit2"] * other)
-        unit3 = ceil(self.units["Unit3"] * other)
+        infantryman = ceil(self.units["Infantryman"] * other)
+        sniper = ceil(self.units["Sniper"] * other)
+        tank = ceil(self.units["Tank"] * other)
         spy = ceil(self.units["Spy"] * other)
-        conq = ceil(self.units["Conqueror"] * other)
-        return Army([unit1, unit2, unit3, spy, conq])
+        general = ceil(self.units["General"] * other)
+        return Army([infantryman, sniper, tank, spy, general])
 
     def __contains__(self, other):
-        return self.units["Unit1"] >= other.units["Unit1"] and \
-            self.units["Unit2"] >= other.units["Unit2"] and \
-            self.units["Unit3"] >= other.units["Unit3"] and \
+        return self.units["Infantryman"] >= other.units["Infantryman"] and \
+            self.units["Sniper"] >= other.units["Sniper"] and \
+            self.units["Tank"] >= other.units["Tank"] and \
             self.units["Spy"] >= other.units["Spy"] and \
-            self.units["Conqueror"] >= other.units["Conqueror"]
+            self.units["General"] >= other.units["General"]
 
     def __repr__(self):
-        return f"Unit1: {self.units['Unit1']},\nUnit2: {self.units['Unit2']},\nUnit3: {self.units['Unit3']},\nSpy: {self.units['Spy']},\nConqueror: {self.units['Conqueror']}"
+        return f"Infantryman: {self.units['Infantryman']},\nSniper: {self.units['Sniper']},\nTank: {self.units['Tank']},\nSpy: {self.units['Spy']},\nGeneral: {self.units['General']}"
 
     def __str__(self):
-        return f"Unit1: {self.units['Unit1']},\nUnit2: {self.units['Unit2']},\nUnit3: {self.units['Unit3']},\nSpy: {self.units['Spy']},\nConqueror: {self.units['Conqueror']}"
+        return f"Infantryman: {self.units['Infantryman']},\nSniper: {self.units['Sniper']},\nTank: {self.units['Tank']},\nSpy: {self.units['Spy']},\nGeneral: {self.units['General']}"
     
     def fit_housing(self, space):
         total = self.count()
@@ -400,13 +400,17 @@ world1 = World(["Babnik", "NPC"])
 ca = world1.spawn_city("Babnik", 12)
 cd = world1.spawn_city("NPC", 12)
 world1.map[ca].reports.append(Report(world1.map[ca], world1.map[cd], 2, "Attack", Army(), Army(), Army(), Army(), 0.05))
-world1.map[ca].build("Iron Mine", 1)
+world1.map[ca].build("Warehouse", 1)
+world1.map[ca].upgrade("Warehouse")
+world1.map[ca].build("Bank", 3)
+world1.map[ca].upgrade("Bank")
 world1.map[ca].build("Training Camp", 2)
+world1.map[ca].resources = [1000,1000,150]
 print(world1.map[ca].reports)
 
 
 ''' Task test
-t1 = Task("Train", ["Unit1", 3], 9)
+t1 = Task("Train", ["Infantryman", 3], 9)
 t2 = Task("Build", ["Farm", 2], 3)
 t3 = Task("Move Troops", [Army([5, 0, 0, 0, 0]), world1.map[ca], world1.map[cd], "Raid"], 6)
 t4 = Task("Build", ["Farm", 3], 5)
