@@ -32,22 +32,23 @@ building_costs = {
     "Range": [[500, 200, 5], [700, 300, 10], [1100, 450, 15], [1800, 700, 20], [3000, 900, 35]]
 }
 
-farm_prod = [0, 50, 130, 310, 750, 1600]
+farm_prod = [10, 50, 130, 310, 750, 1600]
 iron_prod = [0, 10, 25, 45, 80, 150]
 gold_prod = [0, 1, 2, 4, 10, 20]
 bakery_prod = [0, 1000, 2500, 4000, 7500, 12000]
 
-bank_capacity = [0, 40, 140, 330, 580, 980]
-warehouse_capacity = [0, 300, 800, 1800, 3600, 6800]
+bank_capacity = [10, 50, 140, 330, 580, 980]
+warehouse_capacity = [200, 500, 1000, 2000, 3800, 7000]
 bunker_capacity = [0, 200, 500, 1000, 2000, 5000]
-housing_capacity = [0, 75, 350, 1025, 3525, 12425]
+housing_capacity = [75, 150, 425, 1100, 3600, 12500]
 vault_capacity = [0, 20, 50, 100, 200, 500]
 
 wall_power = [0, 100, 350, 1000, 3000, 7000]
 
-camp_spd = [0, 3, 3, 2, 2, 1]
+training_camp_spd = [0, 3, 3, 2, 2, 1]
+range_spd = [0, 3, 3, 2, 2, 1]
 factory_spd = [0, 10, 6, 4, 2, 1]
 agency_spd = [0, 10, 6, 4, 2, 1]
-castle_spd = [0, 10, 6, 4, 2, 1]
+military_hq_spd = [0, 10, 6, 4, 2, 1]
 
 

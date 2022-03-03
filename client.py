@@ -68,10 +68,10 @@ def draw_map_move_buttons(win, mouse):
     # Draws resource display
 def draw_res(win, city):
     pygame.draw.rect(win,(255,255,255),[width-227,55,204,110], 2)          # Border
-    food = f"Food: {city.resources[0]}/{200+values.warehouse_capacity[city.find_level('Warehouse')]}"
-    iron = f"Iron: {city.resources[1]}/{200+values.warehouse_capacity[city.find_level('Warehouse')]}"
-    gold = f"Gold: {city.resources[2]}/{10+values.bank_capacity[city.find_level('Bank')]}"
-    hous = f"Housing: {city.army.count()}/{75+values.housing_capacity[city.find_level('Housing')]}"
+    food = f"Food: {city.resources[0]}/{values.warehouse_capacity[city.find_level('Warehouse')]}"
+    iron = f"Iron: {city.resources[1]}/{values.warehouse_capacity[city.find_level('Warehouse')]}"
+    gold = f"Gold: {city.resources[2]}/{values.bank_capacity[city.find_level('Bank')]}"
+    hous = f"Housing: {city.army.count()}/{values.housing_capacity[city.find_level('Housing')]}"
     poss = (width-210, 60), (width-210, 85), (width-210, 110), (width-210, 135)
     draw_text([food, iron, gold, hous], poss, roboto, (0,0,0))
 
@@ -438,9 +438,11 @@ def main():
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
                             task = Task("Upgrade", [selected.type], 2)
                             res, err = city.required_res(task), ""
-                            if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2]:
+                            if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2]:  # Not enough res
                                 err = "Need more resources!"
-                            else:                                                                                                       # Start task and deduct res
+                            elif len(city.current_tasks) == 3:                                                      # Too many tasks
+                                err = "Too many tasks!"
+                            else:
                                 city.current_tasks.append(task)
                                 city.spend_res(res)
                                 selected, task = None, None
@@ -471,7 +473,7 @@ def main():
                     # Task cancel
                     h = 83
                     for i in range(len(city.current_tasks)):
-                        if 204 <= mouse[0] <= 224 and h <= mouse[1] <= h+20:
+                        if 199 <= mouse[0] <= 219 and h <= mouse[1] <= h+20:
                             temp = city.current_tasks[i]
                             res = city.required_res(temp)
                             city.add_res(res)
@@ -535,6 +537,8 @@ def main():
                                 err = ""
                                 if task in city.current_tasks:
                                     err = "Already training!"
+                                elif len(city.current_tasks) == 3:
+                                    err = "Too many tasks!"
                                 else:
                                     city.current_tasks.append(task)
                                     city.spend_res(res)
@@ -563,10 +567,16 @@ def main():
                                     err = "Already started!"
                                 elif task.data[0] in [b.type for b in list(city.buildings.values())]:
                                     err = "Already built!"
+                                elif task.data[1] == 0 and task.data[0] != "Wall":
+                                    err = "Slot reserved for wall!"
+                                elif task.data[1] != 0 and task.data[0] == "Wall":
+                                    err = "Can't build wall here!"
                                 else:
                                     res, err = city.required_res(task), ""
                                     if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2]:
                                         err = "Need more resources!"
+                                    elif len(city.current_tasks) == 3:
+                                        err = "Too many tasks!"
                                     else:
                                         city.current_tasks.append(task)
                                         city.spend_res(res)
