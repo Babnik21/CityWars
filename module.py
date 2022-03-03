@@ -112,7 +112,7 @@ class City():
         for task in self.current_tasks + self.ongoing_tasks:
             if task.type == "Train":
                 troops += task.data[1]
-        return 75 + values.housing_capacity[self.find_level("Housing")] - troops
+        return values.housing_capacity[self.find_level("Housing")] - troops
 
     # Main method for executing tasks
     def execute(self, task):
@@ -126,7 +126,7 @@ class City():
             # If returning from combat:
             if task.data[3] == "Return":
                 self.army += task.data[0]                   # Adds returning army to current army and kills units there's no room for
-                self.army.fit_housing(75 + values.housing_capacity[self.find_level("Housing")])
+                self.army.fit_housing(values.housing_capacity[self.find_level("Housing")])
                 self.add_res(task.data[4])                  # Adds looted resources
 
             # If NOT returning from combat
@@ -150,25 +150,23 @@ class City():
 
     # Produces resources
     def update_res(self):
-        gold = 0
-        iron = 0
-        food = 10
+        gold, iron, food = 0,0,0
         for s in self.buildings:
             if self.buildings[s].type == "Farm":
                 food += values.farm_prod[self.buildings[s].level]
-                if food + self.resources[0] > 200 + values.warehouse_capacity[self.find_level("Warehouse")]:
+                if food + self.resources[0] > values.warehouse_capacity[self.find_level("Warehouse")]:
                     food = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0]
             elif self.buildings[s].type == "Bakery":
                 food += values.bakery_prod[self.buildings[s].level]
-                if food + self.resources[0] > 200 + values.warehouse_capacity[self.find_level("Warehouse")]:
+                if food + self.resources[0] > values.warehouse_capacity[self.find_level("Warehouse")]:
                     food = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0]
             elif self.buildings[s].type == "Iron Mine":
                 iron += values.iron_prod[self.buildings[s].level]
-                if iron + self.resources[1] > 200 + values.warehouse_capacity[self.find_level("Warehouse")]:
+                if iron + self.resources[1] > values.warehouse_capacity[self.find_level("Warehouse")]:
                     iron = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[1]
             elif self.buildings[s].type == "Gold Mine":
                 gold += values.gold_prod[self.buildings[s].level]
-                if gold + self.resources[2] > 10 + values.warehouse_capacity[self.find_level("Bank")]:
+                if gold + self.resources[2] > values.bank_capacity[self.find_level("Bank")]:
                     gold = values.warehouse_capacity[self.find_level("Bank")] - self.resources[2]
         self.resources = [self.resources[0] + food, self.resources[1] + iron, self.resources[2] + gold]
 
@@ -223,7 +221,7 @@ class City():
             if task.data[0] not in self.army:
                 return False, "You don't have enough troops!"
         elif task.type == "Train":
-            if self.army.count() + task.data[1] > 75 + values.housing_capacity[self.find_level("Housing")]:
+            if self.army.count() + task.data[1] > values.housing_capacity[self.find_level("Housing")]:
                 return False, "You don't have enough housing capacity!"
         req = self.required_res(task)
         if self.resources[0] >= req[0] and self.resources[1] >= req[1] and self.resources[2] >= req[2]:
@@ -303,12 +301,11 @@ class Task():
 
     def __eq__(self, other):
         if isinstance(other, Task):
-            if self.type != "Move Troops":
+            if self.type == "Build" and other.type == "Build":
+                return self.data[0]==other.data[0] or self.data[1] == other.data[1]
+            elif self.type in ["Upgrade", "Train"]:
                 return self.data[0] == other.data[0] and self.type == other.type
-            else:
-                return False
-        else:
-            return False
+        return False
 
     def __lt__(self, other):
         return self.end_turn < other.end_turn
