@@ -1,4 +1,4 @@
-from pickletools import markobject
+from locale import currency
 import pygame
 import sys
 from module import *
@@ -110,6 +110,8 @@ def draw_city(win, mouse, city):
 def draw_tasks(win, mouse, city):
     c_tasks, o_tasks = city.current_tasks, city.ongoing_tasks
     pygame.draw.rect(win,(255,255,255),[23,55,204,504], 2)          # Border
+
+    # Current tasks
     strings, poss = ["Current"], [(28, 58)]
     offset = 25
     #Current tasks
@@ -122,6 +124,10 @@ def draw_tasks(win, mouse, city):
             offset += 20
         offset += 10
         pygame.draw.rect(win, (20, 20, 20), [28,55+h, 194, offset-h-2], 2)      # Task border
+        draw_h_rect(win, mouse, [199,58+h, 20, 20], (255,255,255), (250,205,50))
+        draw_text(["x"], [(204,55+h)], roboto, (255, 0, 0))
+
+    # Ongoing tasks
     strings.append("Ongoing")
     poss.append((28, 58 + offset))
     offset += 25
@@ -141,6 +147,8 @@ def draw_tasks(win, mouse, city):
             offset += 20
         offset += 10
         pygame.draw.rect(win, (20, 20, 20), [28,55+h, 194, offset-h-2], 2)      # Task border
+
+    # Text
     draw_text(strings, poss, roboto, (0,0,0))
 
     # Draws reports
@@ -257,22 +265,8 @@ def draw_training_menu(win, mouse, task, err):
 
     # Buttons
     for i in range(4):
-        draw_h_rect(win, mouse, [width-187+70*(i%2),370+60*(i//2),50,50], (255, 255, 255), (250, 202, 50), border=2)           # Delete commented stuff
-    '''pygame.draw.rect(win,(255,255,255),[width-187,370,50,50], 2)          # B-1
-    if width-187 <= mouse[0] <= width-137 and 370 <= mouse[1] <= 420:
-        pygame.draw.rect(win,(250,205,50),[width-187,370,50,50], 2)        # B-1
-    pygame.draw.rect(win,(255,255,255),[width-117,370,50,50], 2)          # B0
-    if width-117 <= mouse[0] <= width-67 and 370 <= mouse[1] <= 420:
-        pygame.draw.rect(win,(250,205,50),[width-117,370,50,50], 2)          # B0
-    pygame.draw.rect(win,(255,255,255),[width-187,430,50,50], 2)          # B+1
-    if width-187 <= mouse[0] <= width-137 and 430 <= mouse[1] <= 480:
-        pygame.draw.rect(win,(250,205,50),[width-187,430,50,50], 2)          # B+1
-    pygame.draw.rect(win,(255,255,255),[width-117,430,50,50], 2)          # B+10
-    if width-117 <= mouse[0] <= width-67 and 430 <= mouse[1] <= 480:
-        pygame.draw.rect(win,(250,205,50),[width-117,430,50,50], 2)          # B+10
-    pygame.draw.rect(win,(255,255,255),[width-202,490,150,50], 2)          # B confirm
-    if width-202 <= mouse[0] <= width-52 and 490 <= mouse[1] <= 540:
-        pygame.draw.rect(win,(250,205,50),[width-202,490,150,50], 2)          # B confirm'''
+        draw_h_rect(win, mouse, [width-187+70*(i%2),370+60*(i//2),50,50], (255, 255, 255), (250, 205, 50), border=2)
+    draw_h_rect(win, mouse, [width-202,490,150,50], (255, 255, 255), (250, 205, 50), border=2)
 
     # Text in buttons
     strings += ["-1", "+1", "-10", "+10"]
@@ -394,6 +388,7 @@ def main():
                         view = 2
                         selected, task, err = None, None, ""
                     elif width-400 <= mouse[0] <= width-300 and 0 <= mouse[1] <= 25:
+                        topleft = city.topleft_coords(world1)
                         view = 3
                         selected, task, err = None, None, ""
 
@@ -429,6 +424,11 @@ def main():
                         elif width/2+150 <= mouse[0] <= width/2+300 and height-100 <= mouse[1] <= height-50:        # Menu button 4
                             view = 5
                             task = Task("Move Troops", [Army(), city, selected, "Conquest"], 2)                                       # Change end turn calculation
+                    elif view == 5:
+                        if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
+                            city.current_tasks.append(task)
+                            selected, task, err = None, None, ""
+                            view = 2
                 elif isinstance(selected, Building):
                     if selected.type == "Empty":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
@@ -465,7 +465,21 @@ def main():
                     for i in range(min(8, len(city.reports))):
                         if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+i*50 <= mouse[1] <= height/2-227+i*50:
                             selected, task = city.reports[i], None
+                
+                # City view actions
                 elif view == 2:
+                    # Task cancel
+                    h = 83
+                    for i in range(len(city.current_tasks)):
+                        if 204 <= mouse[0] <= 224 and h <= mouse[1] <= h+20:
+                            temp = city.current_tasks[i]
+                            res = city.required_res(temp)
+                            city.add_res(res)
+                            city.current_tasks.pop(i)
+                            break
+                        h += 10 + 20*len(str(city.current_tasks[i]).split("\n"))
+
+                    # Building selection
                     if city.size == 6:
                         x, y = (3, 2)
                         for i in range(x):
@@ -484,12 +498,14 @@ def main():
                             for j in range(y):
                                 if width/2-300+i*150 <= mouse[0] <= width/2-150+i*150 and height/2-255+j*150 <= mouse[1] <= height/2-105+j*150:
                                     selected, task, err = city.buildings[4*j + i + 1], None, ""
+                    # Select Wall
                     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:
                         selected, task, err = city.buildings[0], None, ""
+                    # Right menu actions
                     if task != None:
+                        # Training
                         if task.type == "Train":
                             err = ""
-                            #                                                                                        Make it check for resources and housing!
                             if width-187 <= mouse[0] <= width-137 and 370 <= mouse[1] <= 420:
                                 if task.data[1] - 1 >= 0:
                                     task.data[1] -= 1
@@ -556,6 +572,7 @@ def main():
                                         city.spend_res(res)
                                         selected, task, err = None, None, ""
 
+                # Map view actions
                 elif view == 3:
                     # Selecting a city:
                     x, y = (7, 5)
@@ -578,6 +595,7 @@ def main():
                         if topleft[0] < world1.size - 6:
                             topleft = (topleft[0]+1, topleft[1])
 
+                # Troop movement menu actions
                 elif view == 5:
                     # Unit selection
                     for unit, i in zip(Army().units, range(5)): # For each line
