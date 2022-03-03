@@ -87,11 +87,32 @@ class City():
                 return self.buildings[b].level
         return 0
 
+    # Finds topleft coords for map viewing
+    def topleft_coords(self, world):
+        coords = [self.coords[0]-3, self.coords[1]-2]
+        if coords[0] + 6 > world.size:
+            coords[0] = world.size - 6
+        elif coords[0] < -world.size:
+            coords[0] = -world.size
+        if coords[1] > world.size - 4:
+            coords[1] = world.size - 4
+        elif coords[1] < -world.size:
+            coords[1] = -world.size
+        return coords
+
     def upgrade(self, b):
         slot = self.find_slot(b)
         type = self.buildings[slot].type
         lvl = self.buildings[slot].level
         self.buildings[slot] = Building(type, lvl+1, slot)
+
+    # Calculates remaining housing space
+    def calc_housing(self):
+        troops = self.army.count()
+        for task in self.current_tasks + self.ongoing_tasks:
+            if task.type == "Train":
+                troops += task.data[1]
+        return 75 + values.housing_capacity[self.find_level("Housing")] - troops
 
     # Main method for executing tasks
     def execute(self, task):
@@ -151,6 +172,10 @@ class City():
                     gold = values.warehouse_capacity[self.find_level("Bank")] - self.resources[2]
         self.resources = [self.resources[0] + food, self.resources[1] + iron, self.resources[2] + gold]
 
+    # Spends resources
+    def spend_res(self, res):
+        self.resources = [self.resources[0] - res[0], self.resources[1] - res[1], self.resources[2] - res[2]]
+
     # Adds resources
     def add_res(self, res):
         self.resources = [self.resources[0] + res[0], self.resources[1] + res[1], self.resources[2] + res[2]]
@@ -168,6 +193,7 @@ class City():
             self.resources = [self.resources[0] - farm, self.resources[1] - iron, self.resources[2]]
             return [farm, iron, 0]
 
+    # Returns amount of resources required to start selected task
     def required_res(self, task):
         if task.type == "Build" or task.type == "Upgrade":
             lvl = self.find_level(task.data[0])
@@ -183,9 +209,6 @@ class City():
             if task.data[0] == "Wall":
                 if task.data[1] != 0:
                     return False, "Can't build wall there!"
-            elif task.data[0] == "Bakery":
-                if self.find_level("Farm") != 5:
-                    return False, "You need to upgrade your farm to level 5 first!"
             if self.buildings[task.data[1]].type != "Empty":
                 return False, "This building slot is already full!"
             elif self.find_level(task.data[0]) != 0:
@@ -277,6 +300,15 @@ class Task():
             return f"Task({self.type}, Some data, type {self.data[3]}, {self.end_turn})"
         else:
             return f"Task({self.type}, Some data, {self.end_turn})"
+
+    def __eq__(self, other):
+        if isinstance(other, Task):
+            if self.type != "Move Troops":
+                return self.data[0] == other.data[0] and self.type == other.type
+            else:
+                return False
+        else:
+            return False
 
     def __lt__(self, other):
         return self.end_turn < other.end_turn
