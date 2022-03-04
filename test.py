@@ -14,11 +14,10 @@ class Task():
         else:
             return False
 
-num = 3
 
-lst = ["Username"]
-lst += [f"NPC {i}" for i in range (num)]
-print(lst)
+for val, i in enumerate([1, 2, 3]):
+    print(val, i)
+
 
 
 

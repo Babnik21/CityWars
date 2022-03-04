@@ -9,10 +9,19 @@ unit_costs = {
 unit_stats = {
     "Infantryman": [50, 25, 4, 100],
     "Sniper": [10, 70, 3, 75],
-    "Tank": [80, 110, 1, 200],
-    "Spy": [1, 10, 15, 0],
+    "Tank": [150, 190, 1, 200],
+    "Spy": [1, 10, 7, 0],
     "General": [0, 0, 1, 0]
 }
+
+unit_training_place = {
+    "Infantryman": "Training Camp",
+    "Sniper": "Range",
+    "Tank": "Factory",
+    "Spy": "Agency",
+    "General": "Military HQ"
+}
+
 
 building_costs = {
     "Farm": [[10, 0, 0], [50, 10, 0], [250, 30, 2], [700, 90, 10], [1500, 400, 40]],
@@ -33,7 +42,7 @@ building_costs = {
 }
 
 farm_prod = [10, 50, 130, 310, 750, 1600]
-iron_prod = [0, 10, 25, 45, 80, 150]
+iron_prod = [0, 25, 100, 340, 790, 1500]
 gold_prod = [0, 1, 2, 4, 10, 20]
 bakery_prod = [0, 1000, 2500, 4000, 7500, 12000]
 
@@ -45,10 +54,13 @@ vault_capacity = [0, 20, 50, 100, 200, 500]
 
 wall_power = [0, 100, 350, 1000, 3000, 7000]
 
-training_camp_spd = [0, 3, 3, 2, 2, 1]
-range_spd = [0, 3, 3, 2, 2, 1]
-factory_spd = [0, 10, 6, 4, 2, 1]
-agency_spd = [0, 10, 6, 4, 2, 1]
-military_hq_spd = [0, 10, 6, 4, 2, 1]
+training_spd = {
+    "Training Camp": [0, 3, 3, 2, 2, 1],
+    "Range": [0, 3, 3, 2, 2, 1],
+    "Factory": [0, 10, 6, 4, 2, 1],
+    "Agency": [0, 10, 6, 4, 2, 1],
+    "Military HQ": [0, 10, 6, 4, 2, 1]
+}
+
 
 

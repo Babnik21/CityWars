@@ -1,10 +1,10 @@
 from random import choice, shuffle, uniform
-from math import floor, ceil
+from math import floor, ceil, sqrt
 import values
 
 class World():
-    def __init__(self, usernames):
-        self.players = [Player(p) for p in usernames]
+    def __init__(self, players):
+        self.players = players
         self.size = 2 + len(self.players)
         self.cities = []
         self.turn = 1
@@ -23,13 +23,13 @@ class World():
     def start_game(self):
         for p in self.players:
             self.spawn_city(p, 9)
-        pass
 
     #Adds a new city on the map (returns coords for now)
-    def spawn_city(self, owner, size):
+    def spawn_city(self, player, size):
         coords = choice(self.empty_coords)
-        city = City(owner, size, coords)
-        owner.cities.append(city)
+        city = City(player, size, coords, [])
+        player.add(city)
+        print(len(player.cities))
         self.cities.append(city)
         self.empty_coords.remove(coords)
         self.map[coords] = city
@@ -59,10 +59,19 @@ class Player():
 
     def __str__(self):
         return self.username
+    
+    def __eq__(self, other):
+        if isinstance(other, Player):
+            return self.username == other.username
+        else:
+            return False
 
+    def add(self, city):
+        #self.cities = self.cities + [city]
+        self.cities.append(city)
 
 class City():
-    def __init__(self, owner, size, coords=(0,0), reports = []):
+    def __init__(self, owner, size, coords, reports):
         self.owner = owner
         self.size = size
         self.coords = coords
@@ -84,6 +93,9 @@ class City():
 
     def __repr__(self):
         return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
+
+    def __str__(self):
+        return f"City owned by {self.owner.username} at {self.coords}. Current tasks: {len(self.current_tasks)}"
 
     def train(self, units, num):
         self.army.train(units, num)
@@ -135,10 +147,8 @@ class City():
     def execute(self, task):
         if task.type == "Build":
             self.build(task.data[0], task.data[1])
-            print(f"Building {task.data[0]}")
         elif task.type == "Upgrade":
             self.upgrade(task.data[0])
-            print(f"Upgrading {task.data[0]}")
         elif task.type == "Move Troops":            
             # If returning from combat:
             if task.data[3] == "Return":
@@ -166,28 +176,19 @@ class City():
                 self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", loot], 6))   # Change end turn !!!!
         elif task.type == "Train":
             self.army.units[task.data[0]] += task.data[1]
-            print(f"Training {task.data[1]} of {task.data[0]}")
 
     # Produces resources
     def update_res(self):
         gold, iron, food = 0,0,0
-        for s in self.buildings:
-            if self.buildings[s].type == "Farm":
-                food += values.farm_prod[self.buildings[s].level]
-                if food + self.resources[0] > values.warehouse_capacity[self.find_level("Warehouse")]:
-                    food = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0]
-            elif self.buildings[s].type == "Bakery":
-                food += values.bakery_prod[self.buildings[s].level]
-                if food + self.resources[0] > values.warehouse_capacity[self.find_level("Warehouse")]:
-                    food = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0]
-            elif self.buildings[s].type == "Iron Mine":
-                iron += values.iron_prod[self.buildings[s].level]
-                if iron + self.resources[1] > values.warehouse_capacity[self.find_level("Warehouse")]:
-                    iron = values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[1]
-            elif self.buildings[s].type == "Gold Mine":
-                gold += values.gold_prod[self.buildings[s].level]
-                if gold + self.resources[2] > values.bank_capacity[self.find_level("Bank")]:
-                    gold = values.warehouse_capacity[self.find_level("Bank")] - self.resources[2]
+        # Add values
+        food += values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")]
+        iron += values.iron_prod[self.find_level("Iron Mine")]
+        gold += values.gold_prod[self.find_level("Gold Mine")]
+        # Avoid overflow
+        food = min(food, values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0])
+        iron = min(iron, values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[1])
+        gold = min(gold, values.warehouse_capacity[self.find_level("Bank")] - self.resources[2])
+        # Update
         self.resources = [self.resources[0] + food, self.resources[1] + iron, self.resources[2] + gold]
 
     # Spends resources
@@ -221,7 +222,7 @@ class City():
         else: 
             return [0,0,0]
 
-    # Main function for checking if task is available: returns (False, error) if not and (True, required resources) if yes
+    # Main function for checking if task is available: returns (False, error) if not and (True, required resources) if yes          Neccessary??
     def task_available(self, task):
         if task.type == "Build":
             if task.data[0] == "Wall":
@@ -295,6 +296,18 @@ class City():
         self.reports.append(r_atk)
         if spotted:
             d_city.reports.append(r_def)
+
+    # Updates task endturn                                                                                                      TUKI SMMM¨!!!!!!!!!1
+    def update_task_endturn(self, task, curr_turn):
+        if task.type == "Build" or task.type == "Upgrade":
+            task.end_turn = curr_turn + 1
+        elif task.type == "Train":
+            b = values.unit_training_place[task.data[0]]
+            task.end_turn = curr_turn + values.training_spd[b][self.find_level(b)]
+        elif task.type == "Move Troops":
+            dist = distance(task.data[1], task.data[2])
+            duration = max(dist/values.unit_stats[key][2] for key in task.data[0] if task.data[0][key] > 0)     # Determined by slowest unit
+            task.end_turn = curr_turn + ceil(duration)
 
 class Task():
     def __init__(self, type=None, data=None, end_turn=None):
@@ -447,6 +460,9 @@ class Building():
 
     def __str__(self):
         return f"{self.type} (lvl {self.level})\n"
+
+def distance(c1, c2):
+    return sqrt((c1.coords[0] - c2.coords[0])**2 + (c1.coords[1] - c2.coords[1])**2)
 
 
 '''
