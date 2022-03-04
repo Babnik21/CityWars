@@ -29,7 +29,6 @@ class World():
         coords = choice(self.empty_coords)
         city = City(player, size, coords, [])
         player.add(city)
-        print(len(player.cities))
         self.cities.append(city)
         self.empty_coords.remove(coords)
         self.map[coords] = city
