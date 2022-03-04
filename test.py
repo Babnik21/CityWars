@@ -14,8 +14,11 @@ class Task():
         else:
             return False
 
-for i in range(4):
-    print(i//2, i%2)
+num = 3
+
+lst = ["Username"]
+lst += [f"NPC {i}" for i in range (num)]
+print(lst)
 
 
 

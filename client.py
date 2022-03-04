@@ -17,6 +17,15 @@ pacifico = pygame.font.Font('fonts/Pacifico.ttf', 30)
 pacifico_small = pygame.font.Font('fonts/Pacifico.ttf', 23)
 pacifico_huge = pygame.font.Font('fonts/Pacifico.ttf', 70)
 
+    # Takes user input and returns it as string
+def text_prompt(text, event):
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_BACKSPACE:     # Check for backspace
+            text = text[:-1]
+        else:
+            text += event.unicode
+    return text
+
     # Draws text on screen
 def draw_text(strings, poss, font, c):
     for string, pos in zip(strings, poss):
@@ -183,7 +192,7 @@ def draw_full_report(win, mouse, report):
     draw_text(strings, poss, roboto, (0,0,0))
 
     # Draws map with cities 
-def draw_map(win, mouse, world, topleft=None):
+def draw_map(win, mouse, world, player, topleft=None):
     if topleft==None:
         topleft=(-3,-2)
     pygame.draw.rect(win,(0,0,0),[width/2-352,height/2-282,704,504], 2)       # Border
@@ -191,6 +200,7 @@ def draw_map(win, mouse, world, topleft=None):
         for j in range(5):
             draw_h_rect(win, mouse, [width/2-350+i*100,height/2-280+j*100,100,100], (0,0,0), (255,250,205), border=1)
             if world.map[(topleft[0] + i, topleft[1]+j)] != "Empty":                                                            # Make it print something other than "City"
+                draw_text([f"{world.map[(topleft[0] + i, topleft[1]+j)].owner}'s"], [(width/2-340+i*100,height/2-260+j*100)], roboto, (0,0,0))
                 draw_text(["City"], [(width/2-340+i*100,height/2-230+j*100)], roboto, (0,0,0))
 
     # Draws possible actions on main menu based on selected item (text)
@@ -198,17 +208,17 @@ def draw_actions(win, selected, view):
     strings = []
     poss = []
     if isinstance(selected, Report):
-        if view == 1:
+        if view == "Reports main":
             strings = ["View", "Delete", "Mark as Read"]
             poss = [(width/2-255, height-105), (width/2-115, height-105), (width/2+5, height-97)]
         else:
             strings = ["Back", "Delete"]
             poss = [(width/2-255, height-105), (width/2-115, height-105)]
     elif isinstance(selected, City):                                                # Make attack text only visible only if city owner != player
-        if view == 3:
+        if view == "Map":
             strings = ["Attack", "Raid", "Spy", "Conquer"]
             poss = [(width/2-270, height-105), (width/2-115, height-105), (width/2+45, height-105), (width/2+175, height-105)]
-        elif view == 5:
+        elif view == "Troop select":
             strings = ["Send Army"]
             poss = [(width/2-298, height-105)]
     elif isinstance(selected, Building):
@@ -308,20 +318,52 @@ def draw_building_menu(win, mouse, task, err, b_page):
     draw_text(["Confirm"], [(width-178, 482)], pacifico, (0,0,0))   # Confirm pacifico
     draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))       # Error
 
+    # Draws singleplayer game setup menu
+def draw_sp_settings(win, mouse, err, username, num, selected):
+
+    # Text input bar
+    c = (255, 255, 255) if selected == "Username prompt" else (200, 200, 200)
+    pygame.draw.rect(win,c,[0, 150, width, 25])                 # text prompt rect
+
+    # Text data
+    strings = ["Username: ", username, "Number of opponents: ", str(num), "Difficulty: (not yet)"]
+    poss = [(150, 125), (150, 150), (150, 225), (150, 250), (150, 325)]
+
+    # More/less players buttons
+    strings += ["-", "+"]
+    poss += [(215, 257), (265, 257)]
+    draw_h_rect(win, mouse, (200, 250, 40, 40), (0,0,0), (250, 205, 50), 2)
+    draw_h_rect(win, mouse, (250, 250, 40, 40), (0,0,0), (250, 205, 50), 2)
+
+    #Printing text
+    draw_text(strings, poss, roboto, (0,0,0))
+
+    # Confirm button
+    draw_h_rect(win, mouse, [width/2 - 100, 450, 200, 100], (0,0,0), (250, 205, 50), border = 2)
+    draw_text(["Start game!"], [(width/2-80, 470)], pacifico, (0,0,0))
+    
+    # Error text
+    draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))       
+
 
 
 
 # Updates display (GUI)
-def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
-    if view == 0:
+def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, text, player):
+    if view == "Start menu":
         win.fill((255, 255, 255))
         draw_start_menu(win, mouse)
-    if view == 1: 
+        draw_actions(win, selected, view)
+    elif view == "SP setup":
+        win.fill((250,250,210))
+        draw_sp_settings(win, mouse, err, username, text, selected)
+    elif view == "Reports main": 
         win.fill((255,0,0))
         draw_reports(win, mouse, city)
         draw_bottom_menu(win, mouse, (255, 100, 100))
         draw_next_turn_button(win, mouse, (255, 100, 100))
-    elif view == 2:
+        draw_actions(win, selected, view)
+    elif view == "City":
         win.fill((0,255,0))
         if task != None:
             if task.type == "Train":
@@ -335,22 +377,25 @@ def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
         draw_tasks(win, mouse, city)
         draw_bottom_menu(win, mouse, (100, 255, 100))
         draw_next_turn_button(win, mouse, (100, 255, 100))
-    elif view == 3:
+        draw_actions(win, selected, view)
+    elif view == "Map":
         win.fill((0,0,255))
-        draw_map(win, mouse, world1, topleft)
+        draw_map(win, mouse, world, player, topleft)
         draw_map_move_buttons(win, mouse)
         draw_bottom_menu(win, mouse, (100, 100, 255))
         draw_next_turn_button(win, mouse, (100, 100, 255))
-    elif view == 4:
+        draw_actions(win, selected, view)
+    elif view == "Report":
         win.fill((255,0,0))
         draw_full_report(win, mouse, selected)
         draw_bottom_menu(win, mouse, (255, 100, 100))
-    elif view == 5:
+        draw_actions(win, selected, view)
+    elif view == "Troop select":
         win.fill((0,0,255))
         draw_attack_menu(win, mouse, city, task)
         draw_tasks(win, mouse, city)
         draw_bottom_menu(win, mouse, (100, 100, 255))
-    draw_actions(win, selected, view)
+        draw_actions(win, selected, view)
     draw_top_menu(win, mouse)
     pygame.display.update()
 
@@ -358,77 +403,82 @@ def redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page):
 
 # Main function
 def main():
+    world, player, city, topleft, selected, task = None, None, None, None, None, None
     run = True
     clock = pygame.time.Clock()
-    view = 0
-    selected = None
-    city = world1.map[ca]
-    topleft = city.topleft_coords(world1)
-    task = None
-    err = ""
+    view = "Start menu"
+    err, text, username = "", "", "John Doe"
+    num = 0
     b_page = 0
 
     while run:
         clock.tick(60)
         mouse = pygame.mouse.get_pos()
-        redraw_window(win, view, mouse, selected, city, topleft, task, err, b_page)
+        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, num, player)
         
         for event in pygame.event.get():
+            if selected == "Username prompt":
+                username = text_prompt(username, event)
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # Changing view / quitting
-                if view != 0:               # Can't change views if no game is running!
+                if view != "Start menu":               # Can't change views if no game is running!
                     if width-100 <= mouse[0] <= width and 0 <= mouse[1] <= 25:
                         run = False
                         pygame.quit()
                     elif width-200 <= mouse[0] <= width-100 and 0 <= mouse[1] <= 25:
-                        view = 1
+                        view = "Reports main"
                         selected, task, err = None, None, ""
                     elif width-300 <= mouse[0] <= width-200 and 0 <= mouse[1] <= 25:
-                        view = 2
+                        view = "City"
                         selected, task, err = None, None, ""
                     elif width-400 <= mouse[0] <= width-300 and 0 <= mouse[1] <= 25:
-                        topleft = city.topleft_coords(world1)
-                        view = 3
+                        topleft = city.topleft_coords(world.size)
+                        view = "Map"
                         selected, task, err = None, None, ""
+
+                # Next turn
+                if view in ["Map", "Reports-main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
+                    world.next_turn()
+                    selected, task, err = None, None, ""
 
                 # Main menu actions
                 if isinstance(selected, Report):
-                    if view == 1:
+                    if view == "Reports main":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
-                            view = 4
+                            view = "Report"
                             selected.read = True
                         elif width/2-150 <= mouse[0] <= width/2 and height-100 <= mouse[1] <= height-50:            # Menu button 2
                             city.reports.remove(selected)
                             selected = None
                         elif width/2 <= mouse[0] <= width/2+150 and height-100 <= mouse[1] <= height-50:            # Menu button 3
                             selected.read = True
-                    elif view == 4:
+                    elif view == "Report":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
-                            view = 1
+                            view = "Reports main"
                         elif width/2-150 <= mouse[0] <= width/2 and height-100 <= mouse[1] <= height-50:            # Menu button 2
-                            view = 1
+                            view = "Reports main"
                             city.reports.remove(selected)
                             selected = None
                 elif isinstance(selected, City):
-                    if view == 3:
+                    if view == "Map":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
-                            view = 5
+                            view = "Troop select"
                             task = Task("Move Troops", [Army(), city, selected, "Attack"], 2)                                       # Change end turn calculation
                         elif width/2-150 <= mouse[0] <= width/2 and height-100 <= mouse[1] <= height-50:            # Menu button 2
-                            view = 5
+                            view = "Troop select"
                             task = Task("Move Troops", [Army(), city, selected, "Raid"], 2)                                       # Change end turn calculation
                         elif width/2 <= mouse[0] <= width/2+150 and height-100 <= mouse[1] <= height-50:            # Menu button 3
-                            view = 5
+                            view = "Troop select"
                             task = Task("Move Troops", [Army(), city, selected, "Espionage"], 2)                                       # Change end turn calculation
                         elif width/2+150 <= mouse[0] <= width/2+300 and height-100 <= mouse[1] <= height-50:        # Menu button 4
-                            view = 5
+                            view = "Troop select"
                             task = Task("Move Troops", [Army(), city, selected, "Conquest"], 2)                                       # Change end turn calculation
-                    elif view == 5:
+                    elif view == "Troop select":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
                             city.current_tasks.append(task)
                             selected, task, err = None, None, ""
-                            view = 2
+                            view = "City"
                 elif isinstance(selected, Building):
                     if selected.type == "Empty":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
@@ -453,23 +503,43 @@ def main():
                             
             
                 # View-specific actions
-                if view == 0:
+                if view == "Start menu":
                     if width/2-172 <= mouse[0] <= width/2+172 and height/2-152 <= mouse[1] <= height/2-48:
-                        view = 2
-                        # Username prompt, start game
+                        view = "SP setup"
                     elif width/2-172 <= mouse[0] <= width/2+172 and height/2-27 <= mouse[1] <= height/2+77:
                         # Multiplayer settings page
                         pass
                     elif width/2-172 <= mouse[0] <= width/2+172 and height/2+98 <= mouse[1] <= height/2 +202:
                         # List saves and load game
                         pass
-                if view == 1:
+                if view == "Reports main":
                     for i in range(min(8, len(city.reports))):
                         if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+i*50 <= mouse[1] <= height/2-227+i*50:
                             selected, task = city.reports[i], None
                 
+                # Singleplayer game setup
+                if view == "SP setup":
+                    if 150 <= mouse[1] <= 175:
+                        selected = "Username prompt"
+                    elif 200 <= mouse[0] <= 240 and 250 <= mouse[1] <= 290:
+                        num = max(0, num - 1)
+                    elif 250 <= mouse[0] <= 290 and 250 <= mouse[1] <= 290:
+                        num = min(9, num + 1)
+                    elif width/2 - 100 <= mouse[0] <= width/2 + 100 and 450 < mouse[1] < 550:
+                        lst = [f"{username}"]
+                        lst += [f"NPC {i}" for i in range (num)]
+                        world = World(lst)
+                        world.start_game()
+                        player = world.players[0]
+                        city = player.cities[0]
+                        topleft = city.topleft_coords(world.size)
+                        view = "City"                                                                                                   # Save settings and start new game!!!
+                    else:
+                        selected = None
+
                 # City view actions
-                elif view == 2:
+                elif view == "City":
+
                     # Task cancel
                     h = 83
                     for i in range(len(city.current_tasks)):
@@ -503,6 +573,8 @@ def main():
                     # Select Wall
                     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:
                         selected, task, err = city.buildings[0], None, ""
+                    
+                    
                     # Right menu actions
                     if task != None:
                         # Training
@@ -582,31 +654,33 @@ def main():
                                         city.spend_res(res)
                                         selected, task, err = None, None, ""
 
+                        
+
                 # Map view actions
-                elif view == 3:
+                elif view == "Map":
                     # Selecting a city:
                     x, y = (7, 5)
                     for i in range(x):
                         for j in range(y):
                             if width/2-350+i*100 <= mouse[0] <= width/2-250+i*100 and height/2-280+j*100 <= mouse[1] <= height/2-180+j*100:
-                                if world1.map[(topleft[0]+i,topleft[1]+j)] != "Empty":
-                                    selected = world1.map[(topleft[0]+i,topleft[1]+j)]                                   # Figure out where to show map first (coords)
+                                if world.map[(topleft[0]+i,topleft[1]+j)] != "Empty":
+                                    selected = world.map[(topleft[0]+i,topleft[1]+j)]                                   # Figure out where to show map first (coords)
                     # Map movement
                     if width-150 <= mouse[0] <= width-100 and height-202 <= mouse[1] <= height-152:
-                        if topleft[1] > -world1.size:
+                        if topleft[1] > -world.size:
                             topleft = (topleft[0], topleft[1] - 1)
                     elif width-150 <= mouse[0] <= width-100 and height-98 <= mouse[1] <= height-48:    
-                        if topleft[1] < world1.size-4:
+                        if topleft[1] < world.size-4:
                             topleft = (topleft[0], topleft[1] + 1)
                     elif width-202 <= mouse[0] <= width-152 and height-150 <= mouse[1] <= height-100:
-                        if topleft[0] > -world1.size:
+                        if topleft[0] > -world.size:
                             topleft = (topleft[0]-1, topleft[1])
                     elif width-98 <= mouse[0] <= width-48 and height-150 <= mouse[1] <= height-100:
-                        if topleft[0] < world1.size - 6:
+                        if topleft[0] < world.size - 6:
                             topleft = (topleft[0]+1, topleft[1])
 
                 # Troop movement menu actions
-                elif view == 5:
+                elif view == "Troop select":
                     # Unit selection
                     for unit, i in zip(Army().units, range(5)): # For each line
                         for change, j in zip([-1, -task.data[0].units[unit], 1, 10, 100, city.army.units[unit]], range(6)): # for each column

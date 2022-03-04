@@ -3,8 +3,9 @@ from math import floor, ceil
 import values
 
 class World():
-    def __init__(self, players):
-        self.size = 2 + len(players)
+    def __init__(self, usernames):
+        self.players = [Player(p) for p in usernames]
+        self.size = 2 + len(self.players)
         self.cities = []
         self.turn = 1
         lst = []
@@ -19,10 +20,16 @@ class World():
     def __repr__(self):
         return f"World of size {self.size*2+1}x{self.size*2+1} with {len(self.cities)} cities. Current turn: {self.turn}"
 
+    def start_game(self):
+        for p in self.players:
+            self.spawn_city(p, 9)
+        pass
+
     #Adds a new city on the map (returns coords for now)
     def spawn_city(self, owner, size):
         coords = choice(self.empty_coords)
         city = City(owner, size, coords)
+        owner.cities.append(city)
         self.cities.append(city)
         self.empty_coords.remove(coords)
         self.map[coords] = city
@@ -33,7 +40,7 @@ class World():
         for city in self.cities:
             city.update_res()
             for task in city.current_tasks:
-                if task.type != None:
+                if task.type != None:                               # Is this neccessary?
                     city.ongoing_tasks.append(task)
             city.current_tasks = []
             delete = []
@@ -45,6 +52,15 @@ class World():
             city.ongoing_tasks = [item for item in city.ongoing_tasks if item not in delete]
         self.turn += 1
 
+class Player():
+    def __init__(self, username, cities=[]):
+        self.username = username
+        self.cities = cities
+
+    def __str__(self):
+        return self.username
+
+
 class City():
     def __init__(self, owner, size, coords=(0,0), reports = []):
         self.owner = owner
@@ -55,7 +71,7 @@ class City():
             self.buildings[i] = Building(slot=i)
         self.army = Army()
         # Change default resource values
-        self.resources = [10, 10, 10]
+        self.resources = [150, 150, 5]
         self.current_tasks = []
         self.ongoing_tasks = []
         self.reports = reports
@@ -88,18 +104,19 @@ class City():
         return 0
 
     # Finds topleft coords for map viewing
-    def topleft_coords(self, world):
+    def topleft_coords(self, worldsize):
         coords = [self.coords[0]-3, self.coords[1]-2]
-        if coords[0] + 6 > world.size:
-            coords[0] = world.size - 6
-        elif coords[0] < -world.size:
-            coords[0] = -world.size
-        if coords[1] > world.size - 4:
-            coords[1] = world.size - 4
-        elif coords[1] < -world.size:
-            coords[1] = -world.size
+        if coords[0] + 6 > worldsize:
+            coords[0] = worldsize - 6
+        elif coords[0] < -worldsize:
+            coords[0] = -worldsize
+        if coords[1] > worldsize - 4:
+            coords[1] = worldsize - 4
+        elif coords[1] < -worldsize:
+            coords[1] = -worldsize
         return coords
 
+    # Upgrades selected building in city
     def upgrade(self, b):
         slot = self.find_slot(b)
         type = self.buildings[slot].type
@@ -140,7 +157,10 @@ class City():
                     cap = r_army.capacity()                 # Calculate carrying capacity
                     loot = task.data[2].steal_res(cap)      # Remove loot from defending city
                 elif task.data[3] == "Conquest" and result[4]:
-                    task.data[2].owner = self.owner         # If conquered, change village owner
+                    loser = task.data[2].owner              # If conquered, change village owner
+                    loser.cities.remove(task.data[2])
+                    task.data[2].owner = self.owner
+                    self.owner.cities.append(task.data[2])
 
                 # Make new task for troop return
                 self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", loot], 6))   # Change end turn !!!!
@@ -429,6 +449,7 @@ class Building():
         return f"{self.type} (lvl {self.level})\n"
 
 
+'''
 world1 = World(["Babnik", "NPC"])
 ca = world1.spawn_city("Babnik", 12)
 cd = world1.spawn_city("NPC", 12)
@@ -440,7 +461,7 @@ world1.map[ca].upgrade("Bank")
 world1.map[ca].build("Training Camp", 2)
 world1.map[ca].resources = [300,300,20]
 print(world1.map[ca].reports)
-
+'''
 
 ''' Task test
 t1 = Task("Train", ["Infantryman", 3], 9)
