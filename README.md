@@ -27,7 +27,7 @@ Each city has a pre-determined size (6, 9 or 12 building slots + extra wall slot
 think in advance which buildings are really neccessary for each city, in order to not run out of 
 space for other buildings one desperately needs.
 
-# NPC description
+## NPC description
 
 I'm looking to create NPC cities that develop by themselves. The main purpose for those is to be conquered
 by player characters. They are meant to develop at a slightly slower pace than players in order to not 
@@ -35,7 +35,7 @@ get completely annihilated by every player and instead at least put up a fight. 
 is very basic; randomly select actions among available ones and do not send attacks on other players (subject
 to change based on effectivenes of such approach).
 
-# Bot desctiption
+## Bot desctiption
 
 Now the bot, on the other hand, is meant to pose a bigger threat for the player and actually compete 
 for the victory and challenge the user. More on this topic later once I get to it.
