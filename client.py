@@ -96,27 +96,32 @@ def draw_city(win, mouse, city):
 
     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:     # Wall
         pygame.draw.rect(win, (255, 250, 205), [width/2-300, height/2+195, 600, 25], 2)
+
+    strings, poss = [], []
     if city.size == 6:
         x, y = (3, 2)
         for i in range(x):
             for j in range(y):
                 draw_h_rect(win, mouse, [width/2-225+i*150,height/2-180+j*150,150,150], (50,200,50), (255,250,205), border=2)
-                string = city.buildings[3*j + i + 1].type
-                draw_text([string], [(width/2-225+i*150, height/2-145+j*150)], pacifico, (0,0,0))
+                strings += [city.buildings[3*j + i + 1].type, f"Level: {city.buildings[3*j + i + 1].level}"]
+                poss += [(width/2-225+i*150, height/2-165+j*150), (width/2-225+i*150, height/2-120+j*150)]
     elif city.size == 9:
         x, y = (3, 3)
         for i in range(x):
             for j in range(y):
                 draw_h_rect(win, mouse, [width/2-225+i*150,height/2-255+j*150,150,150], (50,200,50), (255,250,205), border=2)
-                string = city.buildings[3*j + i + 1].type
-                draw_text([string], [(width/2-225+i*150, height/2-220+j*150)], pacifico, (0,0,0))
+                strings += [city.buildings[3*j + i + 1].type, f"Level: {city.buildings[3*j + i + 1].level}"]
+                poss += [(width/2-225+i*150, height/2-240+j*150), (width/2-225+i*150, height/2-195+j*150)]
     elif city.size == 12:
         x, y = (4, 3)
         for i in range(x):
             for j in range(y):
                 draw_h_rect(win, mouse, [width/2-300+i*150,height/2-255+j*150,150,150], (50,200,50), (255,250,205), border=2)
-                string = city.buildings[4*j + i + 1].type
-                draw_text([string], [(width/2-300+i*150, height/2-220+j*150)], pacifico, (0,0,0))
+                strings += [city.buildings[4*j + i + 1].type, f"Level: {city.buildings[4*j + i + 1].level}"]
+                poss += [(width/2-300+i*150, height/2-240+j*150), (width/2-300+i*150, height/2-195+j*150)]
+
+    # Text            
+    draw_text(strings, poss, pacifico, (0,0,0))
 
     # Draws tasks
 def draw_tasks(win, mouse, city):
@@ -212,8 +217,9 @@ def draw_actions(win, selected, view):
     poss = []
     if isinstance(selected, Report):
         if view == "Reports main":
-            strings = ["View", "Delete", "Mark as Read"]
-            poss = [(width/2-255, height-105), (width/2-115, height-105), (width/2+5, height-97)]
+            strings = ["View", "Delete"]
+            poss = [(width/2-255, height-105), (width/2-115, height-105)]
+            draw_text(["Mark as read"], [(width/2+5, height-97)], pacifico_small, (0,0,0))
         else:
             strings = ["Back", "Delete"]
             poss = [(width/2-255, height-105), (width/2-115, height-105)]
@@ -297,19 +303,19 @@ def draw_training_menu(win, mouse, task, err):
 
     # Buttons
     for i in range(4):
-        draw_h_rect(win, mouse, [width-187+70*(i%2),370+60*(i//2),50,50], (255, 255, 255), (250, 205, 50), border=2)
+        draw_h_rect(win, mouse, [width-187+70*(i%2),270+60*(i//2),50,50], (255, 255, 255), (250, 205, 50), border=2)
     draw_h_rect(win, mouse, [width-202,490,150,50], (255, 255, 255), (250, 205, 50), border=2)
 
     # Text in buttons
     strings += ["-1", "+1", "-10", "+10"]
-    poss += [(width-170, 385), (width-100, 385), (width-180, 445), (width-110, 445)]
+    poss += [(width-170, 285), (width-100, 285), (width-180, 345), (width-110, 345)]
     
     # Drawing text
     draw_text(strings, poss, roboto, (0,0,0))       # top + button text
     draw_text(["Confirm"], [(width-178, 482)], pacifico, (0,0,0))   # Confirm text
 
     # Draws menu on the right in city view
-def draw_building_menu(win, mouse, task, err, b_page):
+def draw_building_menu(win, mouse, task, err, b_page, city):
     pygame.draw.rect(win,(255,255,255),[width-227,175,204,384], 2)          # Border
 
     # Top text
@@ -322,22 +328,22 @@ def draw_building_menu(win, mouse, task, err, b_page):
     # Option buttons and text
     for i, b in enumerate(building_costs):
         if i in range(8*(b_page), 8*(b_page+1)):
-            draw_h_rect(win, mouse, [width-205,210+30*(i%8),160,28], (255, 255, 255), (250, 205, 50), border=2)
+            draw_h_rect(win, mouse, [width-205,205+27*(i%8),160,25], (255, 255, 255), (250, 205, 50), border=2)
             strings_s.append(b)
-            poss_s.append((width-160, 215+30*(i%8)))
+            poss_s.append((width-160, 210+27*(i%8)))
 
     # Next and prev page buttons
     for i in range(2):
-        draw_h_rect(win, mouse, [width-195+70*i,455,68,25], (255, 255, 255), (250, 205, 50), border=2)
+        draw_h_rect(win, mouse, [width-195+70*i,470,68,25], (255, 255, 255), (250, 205, 50), border=2)
     
     # Confirm button
-    draw_h_rect(win, mouse, [width-202,490,150,50], (255,255,255), (250,205,50), border=2)
+    draw_h_rect(win, mouse, [width-202,500,150,50], (255,255,255), (250,205,50), border=2)
 
     # Next, prev and confirm text
     strings_s += ["Prev", "Next"]
-    poss_s += [(width-180, 460), (width-110, 460)]
+    poss_s += [(width-180, 475), (width-110, 475)]
     draw_text(strings_s, poss_s, roboto_small, (0,0,0))             # Small text (roboto): all buttons except confirm
-    draw_text(["Confirm"], [(width-178, 482)], pacifico, (0,0,0))   # Confirm pacifico
+    draw_text(["Confirm"], [(width-178, 492)], pacifico, (0,0,0))   # Confirm pacifico
     draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))       # Error
 
     # Draws singleplayer game setup menu
@@ -367,6 +373,14 @@ def draw_sp_settings(win, mouse, err, username, num, selected):
     # Error text
     draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))       
 
+    # Draws task costs
+def draw_costs(task, city):
+    if task.data[0] != "Empty":
+        res = city.required_res(task)
+        c_res = (255, 0, 0) if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2] else (255, 255, 50)
+        strings_s_res = ["Cost:", f"Food: {res[0]}", f"Iron: {res[1]}", f"Gold: {res[2]}"]
+        poss_s_res = [(width-205, 420), (width - 160, 420), (width-160, 436), (width-160, 452)]
+        draw_text(strings_s_res, poss_s_res, roboto_small, c_res)
 
 
 
@@ -389,10 +403,11 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b
     elif view == "City":
         win.fill((0,255,0))
         if task != None:
+            draw_costs(task, city)
             if task.type == "Train":
                 draw_training_menu(win, mouse, task, err)
             if task.type == "Build":
-                draw_building_menu(win, mouse, task, err, b_page)
+                draw_building_menu(win, mouse, task, err, b_page, city)
             if task.type == "Upgrade":
                 draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))
         draw_res(win, city)
@@ -474,9 +489,10 @@ def main():
                         selected, task, err = None, None, ""
 
                 # Next turn
-                if view in ["Map", "Reports-main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
+                if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
                     world.next_turn()
                     selected, task, err = None, None, ""
+                    view = "City"
 
                 # Main menu actions
                 if isinstance(selected, Report):
@@ -515,6 +531,7 @@ def main():
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
                             city.update_task_endturn(task, world.turn)
                             city.current_tasks.append(task)
+                            city.army -= task.data[0]
                             selected, task, err = None, None, ""
                             view = "City"
                     elif view == "Overview":
@@ -533,6 +550,7 @@ def main():
                     if selected.type == "Empty":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
                             task = Task("Build", ["Empty", selected.slot], 2)                                                     # Change end turn calculation
+                    
                     # Upgrade option
                     elif selected.level < 5:
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
@@ -604,19 +622,19 @@ def main():
                         for i in range(x):
                             for j in range(y):
                                 if width/2-225+i*150 <= mouse[0] <= width/2-75+i*150 and height/2-180+j*150 <= mouse[1] <= height/2-30+j*150:
-                                    selected, task, err = city.buildings[3*j + i + 1], None, ""
+                                    selected, task, err = city.buildings[3*j + i + 1], Task("Upgrade", [city.buildings[3*j + i + 1].type]), ""
                     elif city.size == 9:
                         x, y = (3, 3)
                         for i in range(x):
                             for j in range(y):
                                 if width/2-225+i*150 <= mouse[0] <= width/2-75+i*150 and height/2-255+j*150 <= mouse[1] <= height/2-105+j*150:
-                                    selected, task, err = city.buildings[3*j + i + 1], None, ""
+                                    selected, task, err = city.buildings[3*j + i + 1], Task("Upgrade", [city.buildings[3*j + i + 1].type]), ""
                     elif city.size == 12:
                         x, y = (4, 3)
                         for i in range(x):
                             for j in range(y):
                                 if width/2-300+i*150 <= mouse[0] <= width/2-150+i*150 and height/2-255+j*150 <= mouse[1] <= height/2-105+j*150:
-                                    selected, task, err = city.buildings[4*j + i + 1], None, ""
+                                    selected, task, err = city.buildings[4*j + i + 1], Task("Upgrade", [city.buildings[3*j + i + 1].type]), ""
                     # Select Wall
                     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:
                         selected, task, err = city.buildings[0], None, ""
@@ -627,11 +645,11 @@ def main():
                         # Training
                         if task.type == "Train":
                             err = ""
-                            if width-187 <= mouse[0] <= width-137 and 370 <= mouse[1] <= 420:
+                            if width-187 <= mouse[0] <= width-137 and 270 <= mouse[1] <= 320:
                                 if task.data[1] - 1 >= 0:
                                     task.data[1] -= 1
                                     err = ""
-                            if width-117 <= mouse[0] <= width-67 and 370 <= mouse[1] <= 420:
+                            if width-117 <= mouse[0] <= width-67 and 270 <= mouse[1] <= 320:
                                 task.data[1] += 1
                                 res, err = city.required_res(task), ""
                                 if task.data[1] > city.calc_housing():
@@ -640,10 +658,10 @@ def main():
                                 elif res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2]:
                                     err = "Need more resources!"
                                     task.data[1] -= 1
-                            if width-187 <= mouse[0] <= width-137 and 430 <= mouse[1] <= 480:
+                            if width-187 <= mouse[0] <= width-137 and 330 <= mouse[1] <= 380:
                                 if task.data[1] - 10 >= 0:
                                     task.data[1] -= 10
-                            if width-117 <= mouse[0] <= width-67 and 430 <= mouse[1] <= 480:
+                            if width-117 <= mouse[0] <= width-67 and 330 <= mouse[1] <= 380:
                                 task.data[1] += 10
                                 res, err = city.required_res(task), ""
                                 if task.data[1] > city.calc_housing():
@@ -670,17 +688,17 @@ def main():
                             # Building selection
                             for i, b in enumerate(building_costs):
                                 if i in range(8*(b_page), 8*(b_page+1)):
-                                    if width-205 <= mouse[0] <= width-45 and 210+30*(i%8) <= mouse[1] <= 238+30*(i%8):
+                                    if width-205 <= mouse[0] <= width-45 and 205+27*(i%8) <= mouse[1] <= 230+27*(i%8):
                                         task.data[0], err = b, ""
                             
                             # Prev/Next button
-                            if width-195 <= mouse[0] <= width-137 and 455 <= mouse[1] <= 480:
+                            if width-195 <= mouse[0] <= width-137 and 470 <= mouse[1] <= 495:
                                 b_page, err = 0, ""
-                            if width-125 <= mouse[0] <= width-67 and 455 <= mouse[1] <= 480:
+                            if width-125 <= mouse[0] <= width-67 and 470 <= mouse[1] <= 495:
                                 b_page, err = 1, ""
 
                             # Confirmation
-                            if width-202 <= mouse[0] <= width-52 and 490 <= mouse[1] <= 540:
+                            if width-202 <= mouse[0] <= width-52 and 500 <= mouse[1] <= 550:
                                 if task.data[0] == "Empty":
                                     err = "Select building!"
                                 elif task in city.current_tasks:

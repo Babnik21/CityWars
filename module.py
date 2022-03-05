@@ -37,7 +37,6 @@ class World():
     def next_turn(self):
         shuffle(self.cities)
         for city in self.cities:
-            city.update_res()
             for task in city.current_tasks:
                 if task.type != None:                               # Is this neccessary?
                     city.ongoing_tasks.append(task)
@@ -46,9 +45,11 @@ class World():
             city.ongoing_tasks.sort()
             for task in city.ongoing_tasks:
                 if task.end_turn == self.turn + 1:
-                    city.execute(task)
+                    city.execute(task, self.turn)
                     delete.append(task)
+            city.update_res()
             city.ongoing_tasks = [item for item in city.ongoing_tasks if item not in delete]
+            city.reports.sort()
         self.turn += 1
 
 class Player():
@@ -143,7 +144,7 @@ class City():
         return values.housing_capacity[self.find_level("Housing")] - troops
 
     # Main method for executing tasks
-    def execute(self, task):
+    def execute(self, task, curr_turn):
         if task.type == "Build":
             self.build(task.data[0], task.data[1])
         elif task.type == "Upgrade":
@@ -172,7 +173,9 @@ class City():
                     self.owner.cities.append(task.data[2])
 
                 # Make new task for troop return
-                self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", loot], 6))   # Change end turn !!!!
+                if r_army != 0:
+                    self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", loot], 2))   # Change end turn !!!!
+                    self.update_task_endturn(self.ongoing_tasks[-1], curr_turn + 1)
         elif task.type == "Train":
             self.army.units[task.data[0]] += task.data[1]
 
@@ -200,16 +203,19 @@ class City():
 
     # Returns loot and removes res form def village (for now)
     def steal_res(self, cap):
-        if self.resources[0] + self.resources[1] <= cap:
-            loot = [self.resources[0], self.resources[1], 0]
-            self.resources = [0, 0, self.resources[2]]
+        if self.resources[0] + self.resources[1] + self.resources[2] <= cap:
+            loot = [self.resources[0], self.resources[1], self.resources[2]]
+            self.resources = [0, 0, 0]
             return loot
         else:
-            ratio = self.resources[0]/(self.resources[0]+self.resources[1])
-            farm = floor(cap*ratio)
-            iron = floor(cap*(1-ratio))
-            self.resources = [self.resources[0] - farm, self.resources[1] - iron, self.resources[2]]
-            return [farm, iron, 0]
+            ratio_f = self.resources[0]/(self.resources[0]+self.resources[1]+self.resources[2])
+            ratio_i = self.resources[1]/(self.resources[0]+self.resources[1]+self.resources[2])
+            ratio_g = self.resources[2]/(self.resources[0]+self.resources[1]+self.resources[2])
+            farm = floor(cap*ratio_f)
+            iron = floor(cap*ratio_i)
+            gold = floor(cap*ratio_g)
+            self.resources = [self.resources[0] - farm, self.resources[1] - iron, self.resources[2 - gold]]
+            return [farm, iron, gold]
 
     # Returns amount of resources required to start selected task
     def required_res(self, task):
@@ -273,7 +279,7 @@ class City():
                 rate = a_pow/d_pow
                 a_dead = task.data[0]
                 d_dead = task.data[2].army * rate
-            if task.data[3] == "Conquest" and task.data[0].units["General"] > d_dead.units["General"]:
+            if task.data[3] == "Conquest" and task.data[0].units["General"] > a_dead.units["General"]:
                 conq = True
             return a_dead, d_dead, luck, True, conq
 
@@ -305,7 +311,7 @@ class City():
             task.end_turn = curr_turn + values.training_spd[b][self.find_level(b)]
         elif task.type == "Move Troops":
             dist = distance(task.data[1], task.data[2])
-            duration = max(dist/values.unit_stats[key][2] for key in task.data[0] if task.data[0][key] > 0)     # Determined by slowest unit
+            duration = max(dist/values.unit_stats[key][2] for key in task.data[0].units if task.data[0].units[key] > 0)     # Determined by slowest unit
             task.end_turn = curr_turn + ceil(duration)
 
 class Task():
@@ -316,14 +322,14 @@ class Task():
 
     def __str__(self):
         if self.type == "Train":
-            return f"Train {self.data[1]} x {self.data[0]}.\nCompleted on turn {self.end_turn}."
+            return f"Train {self.data[1]} x {self.data[0]}.\nCompleted: turn {self.end_turn}."
         elif self.type == "Move Troops":
             if self.data[3] == "Return":
                 return f"Troops returning from {self.data[1].coords} \nReturning army: {self.data[0]}.\nCompleted on turn {self.end_turn}"
             else: 
-                return f"{self.data[3]}: {self.data[2].coords}\nArmy: {self.data[0]}\nCompleted on turn {self.end_turn}"
+                return f"{self.data[3]}: {self.data[2].coords}\nArmy: {self.data[0]}\nCompleted: turn {self.end_turn}"
         else:
-            return f"{self.type} {self.data[0]}. \nCompleted on turn {self.end_turn}"
+            return f"{self.type} {self.data[0]}. \nCompleted: turn {self.end_turn}"
 
     def __repr__(self):
         if self.type == "Move Troops":
@@ -336,7 +342,7 @@ class Task():
             if self.type == "Build" and other.type == "Build":
                 return self.data[0]==other.data[0] or self.data[1] == other.data[1]
             elif self.type in ["Upgrade", "Train"]:
-                return self.data[0] == other.data[0] and self.type == other.type
+                return self.data[0] == other.data[0] and self.type == other.type and self.end_turn == other.end_turn
         return False
 
     def __lt__(self, other):
@@ -372,6 +378,9 @@ class Report():
             luck = f"Attackers were unlucky ({round(-self.luck*100, 2)}% power deduction)"
         return headline + a_army + a_dead + d_army + d_dead + luck
 
+    def __lt__(self, other):
+        return self.turn > other.turn
+
 class Army():
     def __init__(self, units = [3,0,0,0,0]):
         self.units = {
@@ -383,7 +392,13 @@ class Army():
         }
 
     def __eq__(self, other):
-        return self.units == other.units
+        if isinstance(other, Army):
+            return self.units == other.units
+        elif isinstance(other, int):
+            for key in self.units:
+                if self.units[key] != other:
+                    return False
+            return True
 
     def __add__(self, other):
         return Army([self.units["Infantryman"]+other.units["Infantryman"],
@@ -436,7 +451,7 @@ class Army():
             power += values.wall_power[wall] 
         for u in self.units:
             if side == "A":
-                power += self.units[u] * values.unit_stats[u][0] * luck
+                power += self.units[u] * values.unit_stats[u][0] * (1+luck)
             else:
                 power += self.units[u] * values.unit_stats[u][1]
         return power
