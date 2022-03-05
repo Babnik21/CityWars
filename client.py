@@ -1,8 +1,10 @@
-from typing import ParamSpecArgs
+import pickle
 import pygame
 import sys
 from module import *
 from values import *
+from os import listdir
+from os.path import isfile, join
 
 pygame.font.init()
 width = 1200
@@ -16,6 +18,10 @@ roboto_small = pygame.font.Font('fonts/Roboto/Roboto-Black.ttf',14)
 pacifico = pygame.font.Font('fonts/Pacifico.ttf', 30)
 pacifico_small = pygame.font.Font('fonts/Pacifico.ttf', 23)
 pacifico_huge = pygame.font.Font('fonts/Pacifico.ttf', 70)
+
+def saves_list():
+    files = [f for f in listdir("saves/.") if isfile(join("saves/.", f))]
+    return files
 
     # Takes user input and returns it as string
 def text_prompt(text, event):
@@ -382,14 +388,35 @@ def draw_costs(task, city):
         poss_s_res = [(width-205, 420), (width - 160, 420), (width-160, 436), (width-160, 452)]
         draw_text(strings_s_res, poss_s_res, roboto_small, c_res)
 
+    # Draws load menu
+def draw_load_menu(win, mouse, s_page):
+    pygame.draw.rect(win,(0,0,0),[width/2-352,height/2-282,704,504], 2)       # Border
+    strings, poss = [], []
+    saves = saves_list()
+    for i, save in enumerate(saves):
+        if i in range(8*(s_page), 8*(s_page+1)):
+            draw_h_rect(win, mouse, [width/2-347,height/2-277+52*(i%8),694,50], (0,0,0), (212,175,55), border=2)
+            strings.append(save)
+            poss.append((width/2-340,height/2-265+52*(i%8)))
+    if len(saves) > 8:
+        draw_h_rect(win, mouse, [width/2-100, 500, 80, 40], (0,0,0), (250, 205, 50), border=2)
+        draw_h_rect(win, mouse, [width/2+20, 500, 80, 40], (0,0,0), (250, 205, 50), border=2)
+        strings += ["Prev", "Next"]
+        poss += [(width/2-80, 505), (width/2 + 40, 505)]
+    draw_h_rect(win, mouse, [width/2-75, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_text(["Select!"], [(width/2-48, height-105)], pacifico, (0,0,0))
+    draw_text(strings, poss, roboto, (0,0,0))
 
 
 # Updates display (GUI)
-def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, text, player, c_page):
+def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, text, player, c_page, s_page):
     if view == "Start menu":
         win.fill((255, 255, 255))
         draw_start_menu(win, mouse)
         draw_actions(win, selected, view)
+    elif view == "Load game":
+        win.fill((250,250,210))
+        draw_load_menu(win, mouse, s_page)
     elif view == "SP setup":
         win.fill((250,250,210))
         draw_sp_settings(win, mouse, err, username, text, selected)
@@ -457,12 +484,12 @@ def main():
     view = "Start menu"
     err, text, username = "", "", "John Doe"
     num = 0
-    b_page, c_page = 0,0
+    b_page, c_page, s_page = 0,0,0
 
     while run:
         clock.tick(60)
         mouse = pygame.mouse.get_pos()
-        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, num, player, c_page)
+        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, num, player, c_page, s_page)
         
         for event in pygame.event.get():
             if selected == "Username prompt":
@@ -494,8 +521,13 @@ def main():
                     selected, task, err = None, None, ""
                     view = "City"
 
+                if isinstance(selected, str) and view == "Load game":
+                    if width/2-75 <= mouse[0] <= width/2 +75 and height-100 <= mouse[1] <= height-50:
+                                                                                                                                                #Load game!!!!!
+                        pass
+
                 # Main menu actions
-                if isinstance(selected, Report):
+                elif isinstance(selected, Report):
                     if view == "Reports main":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
                             view = "Report"
@@ -575,15 +607,14 @@ def main():
                         # Multiplayer settings page
                         pass
                     elif width/2-172 <= mouse[0] <= width/2+172 and height/2+98 <= mouse[1] <= height/2 +202:
-                        # List saves and load game
-                        pass
-                if view == "Reports main":
+                        view = "Load game"
+                elif view == "Reports main":
                     for i in range(min(8, len(city.reports))):
                         if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+i*50 <= mouse[1] <= height/2-227+i*50:
                             selected, task = city.reports[i], None
                 
                 # Singleplayer game setup
-                if view == "SP setup":
+                elif view == "SP setup":
                     if 150 <= mouse[1] <= 175:
                         selected = "Username prompt"
                     elif 200 <= mouse[0] <= 240 and 250 <= mouse[1] <= 290:
@@ -764,6 +795,19 @@ def main():
                             c_page = max(c_page-1, 0)
                         elif width/2+20 <= mouse[0] <= width/2+100 and 500 <= mouse[1] <= 540:
                             c_page = min(c_page+1, ceil(len(player.cities)/8)-1)
+
+                elif view == "Load game":
+                    saves = saves_list()
+                    for i, save in enumerate(saves):
+                        if i in range(8*(s_page), 8*(s_page+1)):
+                            if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+52*(i%8) <= mouse[1] <= height/2-227+52*(i%8):
+                                selected, err = save, ""
+                    if len(saves) > 8:
+                        if width/2-100 <= mouse[0] <= width/2-20 and 500 <= mouse[1] <= 540:
+                            s_page = max(s_page-1, 0)
+                        elif width/2+20 <= mouse[0] <= width/2+100 and 500 <= mouse[1] <= 540:
+                            s_page = min(s_page+1, ceil(len(saves)/8)-1)
+
                     
 
 
