@@ -282,11 +282,11 @@ def draw_start_menu(win, mouse):
     draw_text(["City Wars"], [(300, 25)], pacifico_huge, (0,0,0))
 
     # Draws overview page (cities list)
-def draw_overview(win, mouse, player, c_page):
+def draw_overview(win, mouse, player, page):
     pygame.draw.rect(win,(0,0,0),[width/2-352,height/2-282,704,504], 2)       # Border
     strings, poss = [], []
     for i, city in enumerate(player.cities):
-        if i in range(8*(c_page), 8*(c_page+1)):
+        if i in range(8*(page), 8*(page+1)):
             draw_h_rect(win, mouse, [width/2-347,height/2-277+52*(i%8),694,50], (0,0,0), (212,175,55), border=2)
             strings.append(str(city))
             poss.append((width/2-340,height/2-265+52*(i%8)))
@@ -321,7 +321,7 @@ def draw_training_menu(win, mouse, task, err):
     draw_text(["Confirm"], [(width-178, 482)], pacifico, (0,0,0))   # Confirm text
 
     # Draws menu on the right in city view
-def draw_building_menu(win, mouse, task, err, b_page, city):
+def draw_building_menu(win, mouse, task, err, page, city):
     pygame.draw.rect(win,(255,255,255),[width-227,175,204,384], 2)          # Border
 
     # Top text
@@ -333,7 +333,7 @@ def draw_building_menu(win, mouse, task, err, b_page, city):
 
     # Option buttons and text
     for i, b in enumerate(building_costs):
-        if i in range(8*(b_page), 8*(b_page+1)):
+        if i in range(8*(page), 8*(page+1)):
             draw_h_rect(win, mouse, [width-205,205+27*(i%8),160,25], (255, 255, 255), (250, 205, 50), border=2)
             strings_s.append(b)
             poss_s.append((width-160, 210+27*(i%8)))
@@ -389,12 +389,12 @@ def draw_costs(task, city):
         draw_text(strings_s_res, poss_s_res, roboto_small, c_res)
 
     # Draws load menu
-def draw_load_menu(win, mouse, s_page):
+def draw_load_menu(win, mouse, page):
     pygame.draw.rect(win,(0,0,0),[width/2-352,height/2-282,704,504], 2)       # Border
     strings, poss = [], []
     saves = saves_list()
     for i, save in enumerate(saves):
-        if i in range(8*(s_page), 8*(s_page+1)):
+        if i in range(8*(page), 8*(page+1)):
             draw_h_rect(win, mouse, [width/2-347,height/2-277+52*(i%8),694,50], (0,0,0), (212,175,55), border=2)
             strings.append(save)
             poss.append((width/2-340,height/2-265+52*(i%8)))
@@ -427,14 +427,14 @@ def draw_save_menu(win, mouse, selected, savename):
     draw_text(["Exit"], [(width/2+50, height-105)], pacifico, (0,0,0))
 
 # Updates display (GUI)
-def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, text, player, c_page, s_page, savename):
+def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, text, player, savename):
     if view == "Start menu":
         win.fill((255, 255, 255))
         draw_start_menu(win, mouse)
         draw_actions(win, selected, view)
     elif view == "Load game":
         win.fill((250,250,210))
-        draw_load_menu(win, mouse, s_page)
+        draw_load_menu(win, mouse, page)
     elif view == "SP setup":
         win.fill((250,250,210))
         draw_sp_settings(win, mouse, err, username, text, selected)
@@ -452,7 +452,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b
             if task.type == "Train":
                 draw_training_menu(win, mouse, task, err)
             if task.type == "Build":
-                draw_building_menu(win, mouse, task, err, b_page, city)
+                draw_building_menu(win, mouse, task, err, page, city)
             if task.type == "Upgrade":
                 draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))
         draw_res(win, city)
@@ -472,7 +472,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b
         draw_current_turn(win, world.turn)
     elif view == "Overview":
         win.fill((100, 100, 100))
-        draw_overview(win, mouse, player, c_page)
+        draw_overview(win, mouse, player, page)
         draw_bottom_menu(win, mouse, (150, 150, 150))
         draw_actions(win, selected, view)
         draw_current_turn(win, world.turn)
@@ -506,12 +506,12 @@ def main():
     view = "Start menu"
     err, text, username = "", "", "John Doe"
     num = 0
-    b_page, c_page, s_page = 0,0,0
+    page = 0
 
     while run:
         clock.tick(60)
         mouse = pygame.mouse.get_pos()
-        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, num, player, c_page, s_page, savename)
+        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, num, player, savename)
         
         for event in pygame.event.get():
             if selected == "Text prompt":
@@ -525,20 +525,20 @@ def main():
                 if view != "Start menu" and view != "SP setup" and view != "Load game":               # Can't change views if no game is running!
                     if width-100 <= mouse[0] <= width and 0 <= mouse[1] <= 25:
                         view = "Save menu"
-                        selected, task, err = None, None, ""
+                        selected, task, err, page = None, None, "", 0
                     elif width-200 <= mouse[0] <= width-100 and 0 <= mouse[1] <= 25:
                         view = "Reports main"
-                        selected, task, err = None, None, ""
+                        selected, task, err, page = None, None, "", 0
                     elif width-300 <= mouse[0] <= width-200 and 0 <= mouse[1] <= 25:
                         view = "City"
-                        selected, task, err = None, None, ""
+                        selected, task, err, page = None, None, "", 0
                     elif width-400 <= mouse[0] <= width-300 and 0 <= mouse[1] <= 25:
                         topleft = city.topleft_coords(world.size)
                         view = "Map"
-                        selected, task, err = None, None, ""
+                        selected, task, err, page = None, None, "", 0
                     elif width-500 <= mouse[0] <= width-400 and 0 <= mouse[1] <= 25:
                         view = "Overview"
-                        selected, task, err = None, None, ""
+                        selected, task, err, page = None, None, "", 0
 
                 # Next turn
                 if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
@@ -553,6 +553,7 @@ def main():
                             world = pickle.load(f)
                             player = world.players[0]
                             city = player.cities[0]
+                            page = 0
                         view = "City"
                     elif width/2+100 <= mouse[0] <= width/2+250 and height-100 <= mouse[1] <= height-50:                                ###############
                         remove(f"saves/{selected}")
@@ -602,18 +603,19 @@ def main():
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
                             city = selected
                             view = "City"
-                            selected, task, err, c_page = None, None, "", 0
+                            selected, task, err, page = None, None, "", 0
 
                 elif isinstance(selected, Building):
                     # Train option
                     if selected.type in ["Training Camp", "Factory", "Range", "Military HQ", "Agency"]:
                         helper_dict = {"Training Camp": "Infantryman", "Range": "Sniper", "Factory": "Tank", "Agency": "Spy", "Military HQ": "General"}
                         if width/2-150 <= mouse[0] <= width/2 and height-100 <= mouse[1] <= height-50:              # Menu button 2
-                            task = Task("Train", [helper_dict[selected.type], 0], 2)                                                    # Change end turn calculation
+                            task = Task("Train", [helper_dict[selected.type], 0], 2)
                     # Build option
                     if selected.type == "Empty":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:          # Menu button 1
-                            task = Task("Build", ["Empty", selected.slot], 2)                                                     # Change end turn calculation
+                            page = 0
+                            task = Task("Build", ["Empty", selected.slot], 2)
                     
                     # Upgrade option
                     elif selected.level < 5:
@@ -636,7 +638,7 @@ def main():
                     if width/2-172 <= mouse[0] <= width/2+172 and height/2-152 <= mouse[1] <= height/2-48:
                         view = "SP setup"
                     elif width/2-172 <= mouse[0] <= width/2+172 and height/2-42 <= mouse[1] <= height/2+62:
-                        # Multiplayer settings page
+                        # Multiplayer settings page -- later
                         pass
                     elif width/2-172 <= mouse[0] <= width/2+172 and height/2+68 <= mouse[1] <= height/2+172:
                         view = "Load game"
@@ -704,7 +706,7 @@ def main():
                                     selected, task, err = city.buildings[4*j + i + 1], Task("Upgrade", [city.buildings[3*j + i + 1].type]), ""
                     # Select Wall
                     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:
-                        selected, task, err = city.buildings[0], None, ""
+                        selected, task, err = city.buildings[0], Task("Upgrade", [city.buildings[0].type]), ""
                     
                     
                     # Right menu actions
@@ -754,15 +756,15 @@ def main():
 
                             # Building selection
                             for i, b in enumerate(building_costs):
-                                if i in range(8*(b_page), 8*(b_page+1)):
+                                if i in range(8*(page), 8*(page+1)):
                                     if width-205 <= mouse[0] <= width-45 and 205+27*(i%8) <= mouse[1] <= 230+27*(i%8):
                                         task.data[0], err = b, ""
                             
                             # Prev/Next button
                             if width-195 <= mouse[0] <= width-137 and 470 <= mouse[1] <= 495:
-                                b_page, err = 0, ""
+                                page, err = max(page-1, 0), ""
                             if width-125 <= mouse[0] <= width-67 and 470 <= mouse[1] <= 495:
-                                b_page, err = 1, ""
+                                page, err = min(page+1, ceil(len(values.building_costs)/8)-1), ""
 
                             # Confirmation
                             if width-202 <= mouse[0] <= width-52 and 500 <= mouse[1] <= 550:
@@ -786,7 +788,7 @@ def main():
                                         city.update_task_endturn(task, world.turn)
                                         city.current_tasks.append(task)
                                         city.spend_res(res)
-                                        selected, task, err, b_page = None, None, "", 0
+                                        selected, task, err, page = None, None, "", 0
 
                 # Map view actions
                 elif view == "Map":
@@ -823,29 +825,29 @@ def main():
                 # Overview menu actions
                 elif view == "Overview":
                     for i, city in enumerate(player.cities):
-                        if i in range(8*(c_page), 8*(c_page+1)):
+                        if i in range(8*(page), 8*(page+1)):
                             if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+52*(i%8) <= mouse[1] <= height/2-227+52*(i%8):
                                 selected, err = player.cities[i], ""
                     if len(player.cities) > 8:
                         if width/2-100 <= mouse[0] <= width/2-20 and 500 <= mouse[1] <= 540:
-                            c_page = max(c_page-1, 0)
+                            page = max(page-1, 0)
                         elif width/2+20 <= mouse[0] <= width/2+100 and 500 <= mouse[1] <= 540:
-                            c_page = min(c_page+1, ceil(len(player.cities)/8)-1)
+                            page = min(page+1, ceil(len(player.cities)/8)-1)
 
                 elif view == "Load game":
                     saves = saves_list()
                     for i, save in enumerate(saves):
-                        if i in range(8*(s_page), 8*(s_page+1)):
+                        if i in range(8*(page), 8*(page+1)):
                             if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+52*(i%8) <= mouse[1] <= height/2-227+52*(i%8):
                                 selected, err = save, ""
                     if len(saves) > 8:
                         if width/2-100 <= mouse[0] <= width/2-20 and 500 <= mouse[1] <= 540:
-                            s_page = max(s_page-1, 0)
+                            page = max(page-1, 0)
                         elif width/2+20 <= mouse[0] <= width/2+100 and 500 <= mouse[1] <= 540:
-                            s_page = min(s_page+1, ceil(len(saves)/8)-1)
+                            page = min(page+1, ceil(len(saves)/8)-1)
                     if width/2-250 <= mouse[0] <= width/2-100 and height-100 <= mouse[1] <= height-50:                                ###############3333
                         view = "Start menu"
-                        selected = None
+                        selected, page = None, 0
 
                 elif view == "Save menu":
                     if 150 <= mouse[1] <= 175:
