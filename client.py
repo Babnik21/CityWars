@@ -554,7 +554,7 @@ def main():
                             player = world.players[0]
                             city = player.cities[0]
                         view = "City"
-                    elif width/2+100 <= mouse[0] <= width/2+250 and height-100 <= mouse[1] <= height-50:                                ###############3333
+                    elif width/2+100 <= mouse[0] <= width/2+250 and height-100 <= mouse[1] <= height-50:                                ###############
                         remove(f"saves/{selected}")
                         selected = None
 
