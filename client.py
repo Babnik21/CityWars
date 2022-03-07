@@ -3,7 +3,7 @@ import pygame
 import sys
 from module import *
 from values import *
-from os import listdir
+from os import listdir, remove
 from os.path import isfile, join
 
 pygame.font.init()
@@ -272,12 +272,12 @@ def draw_attack_menu(win, mouse, city, task):
     # Draws start menu for setting up and starting a game
 def draw_start_menu(win, mouse):
     # Borders
-    for i in range(3):
-        draw_h_rect(win, mouse, [width/2-172,height/2-152+125*i,344,104], (0,0,0), (255, 250, 205), border=2)
+    for i in range(4):
+        draw_h_rect(win, mouse, [width/2-172,height/2-152+110*i,344,104], (0,0,0), (255, 250, 205), border=2)
     
     # Text
-    strings = ["New Game (Singleplayer)","New Game (Multiplayer)","Load Game"]
-    poss = [(width/2-165, height/2-130),(width/2-160, height/2-3),(width/2-65, height/2+122)]
+    strings = ["New Game (Singleplayer)","New Game (Multiplayer)","Load Game", "Exit Game"]
+    poss = [(width/2-165, height/2-130),(width/2-160, height/2-20),(width/2-65, height/2+90), (width/2-65, height/2+200)]
     draw_text(strings, poss, pacifico, (0,0,0))
     draw_text(["City Wars"], [(300, 25)], pacifico_huge, (0,0,0))
 
@@ -356,7 +356,7 @@ def draw_building_menu(win, mouse, task, err, b_page, city):
 def draw_sp_settings(win, mouse, err, username, num, selected):
 
     # Text input bar
-    c = (255, 255, 255) if selected == "Username prompt" else (200, 200, 200)
+    c = (255, 255, 255) if selected == "Text prompt" else (200, 200, 200)
     pygame.draw.rect(win,c,[0, 150, width, 25])                 # text prompt rect
 
     # Text data
@@ -403,13 +403,31 @@ def draw_load_menu(win, mouse, s_page):
         draw_h_rect(win, mouse, [width/2+20, 500, 80, 40], (0,0,0), (250, 205, 50), border=2)
         strings += ["Prev", "Next"]
         poss += [(width/2-80, 505), (width/2 + 40, 505)]
-    draw_h_rect(win, mouse, [width/2-75, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
-    draw_text(["Select!"], [(width/2-48, height-105)], pacifico, (0,0,0))
+    strings_p = ["Back", "Load", "Delete"]
+    poss_p = [(width/2-210, height-105), (width/2-35, height-105), (width/2+135, height-105)]
+    for i in range(3):
+        draw_h_rect(win, mouse, [width/2-250+i*175, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_text(strings_p, poss_p, pacifico, (0,0,0))
     draw_text(strings, poss, roboto, (0,0,0))
 
+    # Draws exit menu (save options)
+def draw_save_menu(win, mouse, selected, savename):
+    c = (255, 255, 255) if selected == "Text prompt" else (200, 200, 200)
+    pygame.draw.rect(win,c,[0, 150, width, 25])                 # text prompt rect
+
+    # Text data
+    strings = ["Do you want to save the game? If yes, select save name: ", savename]
+    poss = [(150, 125), (150, 150)]
+    draw_text(strings, poss, roboto, (0,0,0))
+
+    # Save and exit buttons
+    draw_h_rect(win, mouse, [width/2-175, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_h_rect(win, mouse, [width/2+25, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_text(["Save"], [(width/2-140, height-105)], pacifico, (0,0,0))
+    draw_text(["Exit"], [(width/2+50, height-105)], pacifico, (0,0,0))
 
 # Updates display (GUI)
-def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, text, player, c_page, s_page):
+def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, text, player, c_page, s_page, savename):
     if view == "Start menu":
         win.fill((255, 255, 255))
         draw_start_menu(win, mouse)
@@ -471,6 +489,10 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b
         draw_bottom_menu(win, mouse, (100, 100, 255))
         draw_actions(win, selected, view)
         draw_current_turn(win, world.turn)
+    elif view == "Save menu":
+        win.fill((100, 100, 100))
+        draw_save_menu(win, mouse, selected, savename)
+        pass
     draw_top_menu(win, mouse)
     pygame.display.update()
 
@@ -478,7 +500,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b
 
 # Main function
 def main():
-    world, player, city, topleft, selected, task = None, None, None, None, None, None
+    world, player, city, topleft, selected, task, savename = None, None, None, None, None, None, "foo"
     run = True
     clock = pygame.time.Clock()
     view = "Start menu"
@@ -489,18 +511,21 @@ def main():
     while run:
         clock.tick(60)
         mouse = pygame.mouse.get_pos()
-        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, num, player, c_page, s_page)
+        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, b_page, username, num, player, c_page, s_page, savename)
         
         for event in pygame.event.get():
-            if selected == "Username prompt":
-                username = text_prompt(username, event)
+            if selected == "Text prompt":
+                if view == "SP setup":
+                    username = text_prompt(username, event)
+                elif view == "Save menu":
+                    savename = text_prompt(savename, event)
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # Changing view / quitting
-                if view != "Start menu" and view != "SP setup":               # Can't change views if no game is running!
+                if view != "Start menu" and view != "SP setup" and view != "Load game":               # Can't change views if no game is running!
                     if width-100 <= mouse[0] <= width and 0 <= mouse[1] <= 25:
-                        run = False
-                        pygame.quit()
+                        view = "Save menu"
+                        selected, task, err = None, None, ""
                     elif width-200 <= mouse[0] <= width-100 and 0 <= mouse[1] <= 25:
                         view = "Reports main"
                         selected, task, err = None, None, ""
@@ -523,8 +548,15 @@ def main():
 
                 if isinstance(selected, str) and view == "Load game":
                     if width/2-75 <= mouse[0] <= width/2 +75 and height-100 <= mouse[1] <= height-50:
-                                                                                                                                                #Load game!!!!!
-                        pass
+                        with open(f"saves/{selected}", "rb") as f:
+                            savename = selected
+                            world = pickle.load(f)
+                            player = world.players[0]
+                            city = player.cities[0]
+                        view = "City"
+                    elif width/2+100 <= mouse[0] <= width/2+250 and height-100 <= mouse[1] <= height-50:                                ###############3333
+                        remove(f"saves/{selected}")
+                        selected = None
 
                 # Main menu actions
                 elif isinstance(selected, Report):
@@ -603,11 +635,15 @@ def main():
                 if view == "Start menu":
                     if width/2-172 <= mouse[0] <= width/2+172 and height/2-152 <= mouse[1] <= height/2-48:
                         view = "SP setup"
-                    elif width/2-172 <= mouse[0] <= width/2+172 and height/2-27 <= mouse[1] <= height/2+77:
+                    elif width/2-172 <= mouse[0] <= width/2+172 and height/2-42 <= mouse[1] <= height/2+62:
                         # Multiplayer settings page
                         pass
-                    elif width/2-172 <= mouse[0] <= width/2+172 and height/2+98 <= mouse[1] <= height/2 +202:
+                    elif width/2-172 <= mouse[0] <= width/2+172 and height/2+68 <= mouse[1] <= height/2+172:
                         view = "Load game"
+                    elif width/2-172 <= mouse[0] <= width/2+172 and height/2+178 <= mouse[1] <= height/2+282:
+                        run = False
+                        pygame.quit()
+
                 elif view == "Reports main":
                     for i in range(min(8, len(city.reports))):
                         if width/2-347 <= mouse[0] <= width/2+347 and height/2-277+i*50 <= mouse[1] <= height/2-227+i*50:
@@ -616,7 +652,7 @@ def main():
                 # Singleplayer game setup
                 elif view == "SP setup":
                     if 150 <= mouse[1] <= 175:
-                        selected = "Username prompt"
+                        selected = "Text prompt"
                     elif 200 <= mouse[0] <= 240 and 250 <= mouse[1] <= 290:
                         num = max(0, num - 1)
                     elif 250 <= mouse[0] <= 290 and 250 <= mouse[1] <= 290:
@@ -807,6 +843,26 @@ def main():
                             s_page = max(s_page-1, 0)
                         elif width/2+20 <= mouse[0] <= width/2+100 and 500 <= mouse[1] <= 540:
                             s_page = min(s_page+1, ceil(len(saves)/8)-1)
+                    if width/2-250 <= mouse[0] <= width/2-100 and height-100 <= mouse[1] <= height-50:                                ###############3333
+                        view = "Start menu"
+                        selected = None
+
+                elif view == "Save menu":
+                    if 150 <= mouse[1] <= 175:
+                        selected = "Text prompt"
+                    else: 
+                        selected = None
+                    if width/2-175 <= mouse[0] <= width/2-25 and  height-100 <= mouse[1] <= height-50:
+                        with open(f"saves/{savename}", "wb") as file:
+                            pickle.dump(world, file)
+                        err = "Saved!"
+                    elif width/2+25 <= mouse[0] <= width/2+175 and  height-100 <= mouse[1] <= height-50:
+                        view = "Start menu"
+                        world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""
+                    else:
+                        err = ""
+
+                    
 
                     
 

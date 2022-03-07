@@ -1,13 +1,12 @@
 from random import shuffle, sample
 from math import ceil, floor
+
+from pyrsistent import b
 import values
 import pathlib
+import pickle
+import os
 
-from os import listdir
-from os.path import isfile, join
-onlyfiles = [f for f in listdir("saves/.") if isfile(join("saves/.", f))]
-
-print(onlyfiles)
 
 class Task():
     def __init__(self, type=None, data=None, end_turn=None):
@@ -21,13 +20,6 @@ class Task():
         else:
             return False
 
-
-initial_count = 0
-for path in pathlib.Path("saves/.").iterdir():
-    if path.is_file():
-        initial_count += 1
-
-print(initial_count)
 
 
 
