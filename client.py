@@ -53,7 +53,7 @@ def draw_next_turn_button(win, mouse, c):
     pygame.draw.rect(win,(255,255,255),[23,580,204,50], 2)                  # Border
     draw_text(["Next Turn"], [(55, 575)], pacifico, (0,0,0))                # Text
 
-# Funciton that draws the menu at top right of the screen (rectangles + text)
+    # Funciton that draws the menu at top right of the screen (rectangles + text)
 def draw_top_menu(win, mouse):
     # Rectangles
     for i in range(5):
@@ -64,14 +64,14 @@ def draw_top_menu(win, mouse):
     poss = (width-65,0), (width-185,0), (width-270,0), (width-370,0), (width-492, 0)
     draw_text(strs, poss, roboto, (255, 255, 255))
     
-# Draws bottom menu in city view
+    # Draws bottom menu in city view
 def draw_bottom_menu(win, mouse, c):
     pygame.draw.rect(win, (0,0,0), [width/2-300-2,height-100-2,604,54], 2)      # Border
     c2 = tuple([color + 50 if color < 205 else 255 for color in c])       # Change color for highlighted option
     for i in range(4):
         draw_h_rect(win, mouse, [width/2-300+(150*i),height-100,150,50], c, c2)
 
-# Draws map movement buttons ------                 (text needs to be added)
+    # Draws map movement buttons ------                 (text needs to be added)
 def draw_map_move_buttons(win, mouse):
     # Rectangles
     for i, j in zip([-1, 0, 0, 1], [0, -1, 1, 0]):
@@ -421,10 +421,12 @@ def draw_save_menu(win, mouse, selected, savename):
     draw_text(strings, poss, roboto, (0,0,0))
 
     # Save and exit buttons
-    draw_h_rect(win, mouse, [width/2-175, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
-    draw_h_rect(win, mouse, [width/2+25, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
-    draw_text(["Save"], [(width/2-140, height-105)], pacifico, (0,0,0))
-    draw_text(["Exit"], [(width/2+50, height-105)], pacifico, (0,0,0))
+    draw_h_rect(win, mouse, [width/2-300, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_h_rect(win, mouse, [width/2-75, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_h_rect(win, mouse, [width/2+150, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    strings = ["Back", "Save", "Exit"]
+    poss = [(width/2 - 260, height-105), (width/2-35, height-105), (width/2+195, height-105)]
+    draw_text(strings, poss, pacifico, (0,0,0))
 
 # Updates display (GUI)
 def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, text, player, savename):
@@ -514,6 +516,9 @@ def main():
         redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, num, player, savename)
         
         for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
             if selected == "Text prompt":
                 if view == "SP setup":
                     username = text_prompt(username, event)
@@ -543,6 +548,7 @@ def main():
                 # Next turn
                 if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
                     world.next_turn()
+                    _ = possible_tasks_npc(city)
                     selected, task, err = None, None, ""
                     view = "City"
 
@@ -661,8 +667,11 @@ def main():
                         num = min(9, num + 1)
                     elif width/2 - 100 <= mouse[0] <= width/2 + 100 and 450 < mouse[1] < 550:
                         players = [Player(username, [])]
-                        players += [Player(f"NPC {i}", []) for i in range(num)]
+                        players += [Player(f"AI {i}", []) for i in range(num)]
+                        npc_count = len(players)*6
+                        npcs = [Player(f"NPC {i}", []) for i in range(npc_count)]
                         world = World(players)
+                        world.players += npcs
                         world.start_game()
                         player = world.players[0]
                         city = player.cities[0]
@@ -745,7 +754,10 @@ def main():
                                     err = "Already training!"
                                 elif len(city.current_tasks) == 3:
                                     err = "Too many tasks!"
+                                elif task.data[1] == 0:
+                                    err = "Select more units!"
                                 else:
+                                    res = city.required_res(task)
                                     city.update_task_endturn(task, world.turn)
                                     city.current_tasks.append(task)
                                     city.spend_res(res)
@@ -798,7 +810,7 @@ def main():
                         for j in range(y):
                             if width/2-350+i*100 <= mouse[0] <= width/2-250+i*100 and height/2-280+j*100 <= mouse[1] <= height/2-180+j*100:
                                 if world.map[(topleft[0]+i,topleft[1]+j)] != "Empty":
-                                    selected = world.map[(topleft[0]+i,topleft[1]+j)]                                   # Figure out where to show map first (coords)
+                                    selected = world.map[(topleft[0]+i,topleft[1]+j)]
                     # Map movement
                     if width-150 <= mouse[0] <= width-100 and height-202 <= mouse[1] <= height-152:
                         if topleft[1] > -world.size:
@@ -845,7 +857,7 @@ def main():
                             page = max(page-1, 0)
                         elif width/2+20 <= mouse[0] <= width/2+100 and 500 <= mouse[1] <= 540:
                             page = min(page+1, ceil(len(saves)/8)-1)
-                    if width/2-250 <= mouse[0] <= width/2-100 and height-100 <= mouse[1] <= height-50:                                ###############3333
+                    if width/2-250 <= mouse[0] <= width/2-100 and height-100 <= mouse[1] <= height-50:
                         view = "Start menu"
                         selected, page = None, 0
 
@@ -854,15 +866,22 @@ def main():
                         selected = "Text prompt"
                     else: 
                         selected = None
-                    if width/2-175 <= mouse[0] <= width/2-25 and  height-100 <= mouse[1] <= height-50:
+                    if width/2-300 <= mouse[0] <= width/2+150 and  height-100 <= mouse[1] <= height-50:
+                        view = "City"
+                    elif width/2-75 <= mouse[0] <= width/2+75 and  height-100 <= mouse[1] <= height-50:
                         with open(f"saves/{savename}", "wb") as file:
                             pickle.dump(world, file)
                         err = "Saved!"
-                    elif width/2+25 <= mouse[0] <= width/2+175 and  height-100 <= mouse[1] <= height-50:
+                    elif width/2+150 <= mouse[0] <= width/2+300 and  height-100 <= mouse[1] <= height-50:
                         view = "Start menu"
                         world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""
                     else:
                         err = ""
+
+
+    draw_h_rect(win, mouse, [width/2-300, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_h_rect(win, mouse, [width/2-75, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    draw_h_rect(win, mouse, [width/2+150, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
 
                     
 

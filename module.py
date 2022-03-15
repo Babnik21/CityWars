@@ -1,6 +1,7 @@
-from random import choice, shuffle, uniform
+from random import choice, shuffle, uniform, choices
 from math import floor, ceil, sqrt
 import values
+import re
 
 class World():
     def __init__(self, players):
@@ -22,7 +23,10 @@ class World():
 
     def start_game(self):
         for p in self.players:
-            self.spawn_city(p, 9)
+            if re.match("^NPC\s\d+$", p.username):
+                self.spawn_city(p, choices([6, 9, 12], weights=[0.2, 0.4, 0.4])[0])
+            else:
+                self.spawn_city(p, 9)
 
     #Adds a new city on the map (returns coords for now)
     def spawn_city(self, player, size):
@@ -67,7 +71,6 @@ class Player():
             return False
 
     def add(self, city):
-        #self.cities = self.cities + [city]
         self.cities.append(city)
 
 class City():
@@ -107,7 +110,7 @@ class City():
         for s in self.buildings:
             if self.buildings[s].type == building:
                 return s
-        return "Error"
+        return None
 
     def find_level(self, building):
         for b in self.buildings:
@@ -183,7 +186,7 @@ class City():
     def update_res(self):
         gold, iron, food = 0,0,0
         # Add values
-        food += values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")]
+        food += values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")] - self.army.count()
         iron += values.iron_prod[self.find_level("Iron Mine")]
         gold += values.gold_prod[self.find_level("Gold Mine")]
         # Avoid overflow
@@ -203,57 +206,47 @@ class City():
 
     # Returns loot and removes res form def village (for now)
     def steal_res(self, cap):
-        if self.resources[0] + self.resources[1] + self.resources[2] <= cap:
-            loot = [self.resources[0], self.resources[1], self.resources[2]]
-            self.resources = [0, 0, 0]
-            return loot
+        ratio_f_1 = self.resources[0]/(self.resources[0]+self.resources[1])
+        ratio_i_1 = self.resources[1]/(self.resources[0]+self.resources[1])
+        available_f = max(0, self.resources[0] - floor(values.bunker_capacity[self.find_level("Bunker")]*ratio_f_1))
+        available_i = max(0, self.resources[1] - floor(values.bunker_capacity[self.find_level("Bunker")]*ratio_i_1))
+        available_g = max(0, self.resources[2] - values.vault_capacity[self.find_level("Vault")])
+        if available_g + available_f + available_i <= cap:
+            loot = [available_f, available_i, available_g]
         else:
-            ratio_f = self.resources[0]/(self.resources[0]+self.resources[1]+self.resources[2])
-            ratio_i = self.resources[1]/(self.resources[0]+self.resources[1]+self.resources[2])
-            ratio_g = self.resources[2]/(self.resources[0]+self.resources[1]+self.resources[2])
-            farm = floor(cap*ratio_f)
-            iron = floor(cap*ratio_i)
-            gold = floor(cap*ratio_g)
-            self.resources = [self.resources[0] - farm, self.resources[1] - iron, self.resources[2 - gold]]
-            return [farm, iron, gold]
+            ratio_f = available_f/(available_f+available_i+available_g)
+            ratio_i = available_i/(available_f+available_i+available_g)
+            ratio_g = available_g/(available_f+available_i+available_g)
+            loot = [floor(cap*ratio_f), floor(cap*ratio_i), floor(cap*ratio_g)]
+        self.spend_res(loot)
+        return loot
 
     # Returns amount of resources required to start selected task
     def required_res(self, task):
-        if task.type == "Build" or task.type == "Upgrade":
-            lvl = self.find_level(task.data[0])
-            return values.building_costs[task.data[0]][lvl]
-        elif task.type == "Train":
-            return [task.data[1] * x for x in values.unit_costs[task.data[0]]]
-        else: 
-            return [0,0,0]
-
-    # Main function for checking if task is available: returns (False, error) if not and (True, required resources) if yes          Neccessary??
-    def task_available(self, task):
-        if task.type == "Build":
-            if task.data[0] == "Wall":
-                if task.data[1] != 0:
-                    return False, "Can't build wall there!"
-            if self.buildings[task.data[1]].type != "Empty":
-                return False, "This building slot is already full!"
-            elif self.find_level(task.data[0]) != 0:
-                return False, "This building already exists!"
-        elif task.type == "Upgrade":
-            if self.find_level(task.data[0]) == 0:
-                return False, "Building doesn't exist"
-            elif self.find_level(task.data[0]) == 5:
-                return False, "Building is already at max level!"
-        # Doesn't check if destination village exists!
-        elif task.type == "Move Troops":
-            if task.data[0] not in self.army:
-                return False, "You don't have enough troops!"
-        elif task.type == "Train":
-            if self.army.count() + task.data[1] > values.housing_capacity[self.find_level("Housing")]:
-                return False, "You don't have enough housing capacity!"
-        req = self.required_res(task)
-        if self.resources[0] >= req[0] and self.resources[1] >= req[1] and self.resources[2] >= req[2]:
-            return True, req
+        if isinstance(task, Task):
+            if task.type == "Build" or task.type == "Upgrade":
+                lvl = self.find_level(task.data[0])
+                return values.building_costs[task.data[0]][lvl]
+            elif task.type == "Train":
+                return [task.data[1] * x for x in values.unit_costs[task.data[0]]]
+            else: 
+                return [0,0,0]
         else:
-            return False, "You don't have enough resources"
+            res = [0,0,0]
+            for t in task:
+                if t != None:
+                    if t.type == "Build" or t.type == "Upgrade":
+                        lvl = self.find_level(t.data[0])
+                        cost = values.building_costs[t.data[0]][lvl]
+                        res = [res[0]+cost[0], res[1]+cost[1], res[2]+cost[2]] 
+                    elif t.type == "Train":
+                        cost = [t.data[1] * x for x in values.unit_costs[t.data[0]]]
+                        res = [res[0]+cost[0], res[1]+cost[1], res[2]+cost[2]]
+            return res
+
+    # Returns true if there are enough resources available else false
+    def enough_res(self, res):
+        return self.resources[0] >= res[0] and self.resources[1] >= res[1] and self.resources[2] >= res[2]
 
     # Main function for calculating combat results --> returns (a_dead, d_dead, luck, bool_spotted, bool_conquered)
     def combat_calculation(self, task):
@@ -302,7 +295,7 @@ class City():
         if spotted:
             d_city.reports.append(r_def)
 
-    # Updates task endturn                                                                                                      TUKI SMMM¨!!!!!!!!!1
+    # Updates task endturn
     def update_task_endturn(self, task, curr_turn):
         if task.type == "Build" or task.type == "Upgrade":
             task.end_turn = curr_turn + 1
@@ -333,16 +326,16 @@ class Task():
 
     def __repr__(self):
         if self.type == "Move Troops":
-            return f"Task({self.type}, Some data, type {self.data[3]}, {self.end_turn})"
+            return f"Task({self.type}, {self.data}, type {self.data[3]}, {self.end_turn})"
         else:
-            return f"Task({self.type}, Some data, {self.end_turn})"
+            return f"Task({self.type}, {self.data}, {self.end_turn})"
 
     def __eq__(self, other):
         if isinstance(other, Task):
             if self.type == "Build" and other.type == "Build":
                 return self.data[0]==other.data[0] or self.data[1] == other.data[1]
             elif self.type in ["Upgrade", "Train"]:
-                return self.data[0] == other.data[0] and self.type == other.type and self.end_turn == other.end_turn
+                return self.data[0] == other.data[0] and self.type == other.type
         return False
 
     def __lt__(self, other):
@@ -475,84 +468,78 @@ class Building():
     def __str__(self):
         return f"{self.type} (lvl {self.level})\n"
 
+    def __eq__(self, other):
+        if isinstance(other, Building):
+            return self.type == other.type
+        else: 
+            return False
+
 def distance(c1, c2):
     return sqrt((c1.coords[0] - c2.coords[0])**2 + (c1.coords[1] - c2.coords[1])**2)
 
+# Returns a list of possible tasks. Doesn't include troops
+def possible_tasks_npc(city):
+    tasks = []
+    building_slots = []
+    building_tasks = []
+    for b in city.buildings.values():
+        if b.level == 0:
+            building_slots.append(b.slot)
+        elif b.level < 5:
+            tasks.append(Task("Upgrade", data=[b.type], end_turn=0))
+        if b.type in ["Training Camp", "Range", "Factory", "Agency", "Military HQ"]:
+            troops = 1
+            while True:
+                task = Task("Train", data = [values.units_trained_in[b.type], troops], end_turn=0)
+                cost = city.required_res(task)
+                if city.enough_res(cost):
+                    tasks.append(task)
+                    troops = ceil((1 + troops)*1.3)
+                else:
+                    break
 
-'''
-world1 = World(["Babnik", "NPC"])
-ca = world1.spawn_city("Babnik", 12)
-cd = world1.spawn_city("NPC", 12)
-world1.map[ca].reports.append(Report(world1.map[ca], world1.map[cd], 2, "Attack", Army(), Army(), Army(), Army(), 0.05))
-world1.map[ca].build("Warehouse", 1)
-world1.map[ca].upgrade("Warehouse")
-world1.map[ca].build("Bank", 3)
-world1.map[ca].upgrade("Bank")
-world1.map[ca].build("Training Camp", 2)
-world1.map[ca].resources = [300,300,20]
-print(world1.map[ca].reports)
-'''
+    if 0 in building_slots:
+        tasks.append(Task("Build", ["Wall", 0], end_turn=0))
+        building_slots.remove(0)
+    if len(building_slots) > 0:
+        for b in values.building_costs:
+            if b != "Wall" and Building(b) not in city.buildings.values():
+                building_tasks.append(Task("Build", [b, 1], end_turn=0))
 
-''' Task test
-t1 = Task("Train", ["Infantryman", 3], 9)
-t2 = Task("Build", ["Farm", 2], 3)
-t3 = Task("Move Troops", [Army([5, 0, 0, 0, 0]), world1.map[ca], world1.map[cd], "Raid"], 6)
-t4 = Task("Build", ["Farm", 3], 5)
-t5 = Task("Build", ["Iron Mine", 4], 7)
-t7 = Task("Upgrade", ["Farm"], 7)
-print(f"Can start task 1: {world1.map[ca].task_available(t1)}")
-print(f"Can start task 2: {world1.map[ca].task_available(t2)}")
-print(f"Can start task 3: {world1.map[ca].task_available(t3)}")
-print(f"Can start task 4: {world1.map[ca].task_available(t4)}")
-print(f"Can start task 5: {world1.map[ca].task_available(t5)}")
-print(f"Can start task 7: {world1.map[ca].task_available(t7)}")
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-world1.map[ca].current_tasks.append(t2)
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-print(world1.map[ca].resources)
-print(f"Can start task 1: {world1.map[ca].task_available(t1)}")
-print(f"Can start task 2: {world1.map[ca].task_available(t2)}")
-print(f"Can start task 3: {world1.map[ca].task_available(t3)}")
-print(f"Can start task 4: {world1.map[ca].task_available(t4)}")
-print(f"Can start task 5: {world1.map[ca].task_available(t5)}")
-print(f"Can start task 7: {world1.map[ca].task_available(t7)}")
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-print(f"Can start task 1: {world1.map[ca].task_available(t1)}")
-print(f"Can start task 2: {world1.map[ca].task_available(t2)}")
-print(f"Can start task 3: {world1.map[ca].task_available(t3)}")
-print(f"Can start task 4: {world1.map[ca].task_available(t4)}")
-print(f"Can start task 5: {world1.map[ca].task_available(t5)}")
-print(f"Can start task 7: {world1.map[ca].task_available(t7)}")
-world1.map[ca].current_tasks.append(t5)
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-print(world1.map[ca].resources)
-print(f"Can start task 1: {world1.map[ca].task_available(t1)}")
-print(f"Can start task 2: {world1.map[ca].task_available(t2)}")
-print(f"Can start task 3: {world1.map[ca].task_available(t3)}")
-print(f"Can start task 4: {world1.map[ca].task_available(t4)}")
-print(f"Can start task 5: {world1.map[ca].task_available(t5)}")
-print(f"Can start task 7: {world1.map[ca].task_available(t7)}")
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-world1.map[ca].current_tasks.append(t1)
-world1.next_turn()
-print(f"Turn: {world1.turn}")
-print(world1.map[ca].resources)
-print(f"Can start task 1: {world1.map[ca].task_available(t1)}")
-print(f"Can start task 2: {world1.map[ca].task_available(t2)}")
-print(f"Can start task 3: {world1.map[ca].task_available(t3)}")
-print(f"Can start task 4: {world1.map[ca].task_available(t4)}")
-print(f"Can start task 5: {world1.map[ca].task_available(t5)}")
-print(f"Can start task 7: {world1.map[ca].task_available(t7)}")
-'''
+    triples = [[]]
+    for i in range(len(building_tasks)):
+        if city.enough_res(city.required_res([building_tasks[i]])):
+            triples.append([building_tasks[i]])
+            if len(building_slots) - 1 > 0:
+                for j in range(i+1, len(building_tasks)):
+                    if city.enough_res(city.required_res([building_tasks[i], building_tasks[j]])):
+                        triples.append([building_tasks[i], building_tasks[j]])
+                        if len(building_slots) - 2 > 0:
+                            for k in range(j+1, len(building_tasks)):
+                                if city.enough_res(city.required_res([building_tasks[i], building_tasks[j], building_tasks[k]])):
+                                    triples.append([building_tasks[i], building_tasks[j], building_tasks[k]])
+                        for task in tasks:
+                            if city.enough_res(city.required_res([building_tasks[i], building_tasks[j], task])):
+                                triples.append([building_tasks[i], building_tasks[j], task])
+            for j in range(i + 1, len(tasks)):
+                if city.enough_res(city.required_res([building_tasks[i], tasks[j]])):
+                    triples.append([building_tasks[i], tasks[j]])
+                    for k in range(j+1, len(tasks)):
+                        if city.enough_res(city.required_res([building_tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j]:
+                            triples.append([building_tasks[i], tasks[j], tasks[k]])
+    for i in range(len(tasks)):
+        if city.enough_res(city.required_res([tasks[i]])):
+            triples.append([tasks[i]])
+            for j in range(i+1, len(tasks)):
+                if city.enough_res(city.required_res([tasks[i], tasks[j]])) and tasks[i] != tasks[j]:
+                    triples.append([tasks[i], tasks[j]])
+                    for k in range(j+1, len(tasks)):
+                        if city.enough_res(city.required_res([tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j]:
+                            triples.append([tasks[i], tasks[j], tasks[k]])
 
+    for el in triples:
+        print(el)
 
-#PREVERI ČE EXECUTE TASK, MAKE REPORTS IN COMBAT CALCULATION DELUJETO PRAVILNO
+    print(f"Total available task triples: {len(triples)}")
+
+    return triples
