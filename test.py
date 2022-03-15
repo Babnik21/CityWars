@@ -1,11 +1,10 @@
-from random import shuffle, sample
+from random import shuffle, sample, uniform, choice, choices
 from math import ceil, floor
-
-from pyrsistent import b
 import values
 import pathlib
 import pickle
 import os
+import re
 
 
 class Task():
@@ -15,10 +14,12 @@ class Task():
         self.end_turn = end_turn
     
     def __eq__(self, other):
-        if self.type != "Move Troops":
-            return self.data[0] == other.data[0] and self.type == other.type
-        else:
-            return False
+        if isinstance(other, Task):
+            if self.type == "Build" and other.type == "Build":
+                return self.data[0]==other.data[0] or self.data[1] == other.data[1]
+            elif self.type in ["Upgrade", "Train"]:
+                return self.data[0] == other.data[0] and self.type == other.type
+        return False
 
 
 
