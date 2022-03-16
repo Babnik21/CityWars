@@ -23,6 +23,11 @@ class Task():
 
 
 
+class Test():
+    def __init__(self):
+        self.type = "Alpha"
+        self.second = f"Jaz sem {self.type}"
+
 
 
 
