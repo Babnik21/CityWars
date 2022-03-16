@@ -93,12 +93,39 @@ def draw_res(win, city):
     poss = (width-210, 60), (width-210, 85), (width-210, 110), (width-210, 135)
     draw_text([food, iron, gold, hous], poss, roboto, (0,0,0))
 
+    #Draws a building (displays image)
+def draw_building(win, mouse, building, pos):
+    # Ground (grey or green depending on building type)
+    color = (50,204,73)
+    pygame.draw.rect(win, color, [pos[0], pos[1], 150, 150])
+
+    # Image
+    image = pygame.image.load(building.img)
+    image = pygame.transform.scale(image, (150, 150))
+    win.blit(image, pos)
+
+    # Level
+    if building.type != "Empty":
+        pygame.draw.circle(win, (255, 255, 255), (pos[0]+30, pos[1] + 30), 15)
+        draw_text([str(building.level)], [(pos[0]+24, pos[1] + 18)], roboto, (0,0,0))
+
+    # Highlighting border
+    draw_h_rect(win, mouse, [pos[0],pos[1],150,150], color, (255,250,205), border=2)
+
     # Draws city (just building outlines for now)
 def draw_city(win, mouse, city):
     pygame.draw.rect(win,(255,255,255),[width/2-352,height/2-282,704,504], 2)       # Border
+    
     # Wall
-    string = f"Wall level {city.find_level('Wall')}"
-    draw_text([string], [(width/2-70, 520)], pacifico_small, (0,0,0))
+    if city.find_level("Wall") > 0:
+        image = pygame.image.load("images/wall.png")
+        image = pygame.transform.scale(image, (700, 530))
+        win.blit(image, (width/2-360, height/2-295))
+        pygame.draw.circle(win, (255, 255, 255), (width/2, height/2+210), 15)
+        draw_text([str(city.find_level("Wall"))], [(width/2-6, height/2+198)], roboto, (0,0,0))
+
+        #string = f"Wall level {city.find_level('Wall')}"
+        #draw_text([string], [(width/2-70, 520)], pacifico_small, (0,0,0))
 
     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:     # Wall
         pygame.draw.rect(win, (255, 250, 205), [width/2-300, height/2+195, 600, 25], 2)
@@ -108,23 +135,17 @@ def draw_city(win, mouse, city):
         x, y = (3, 2)
         for i in range(x):
             for j in range(y):
-                draw_h_rect(win, mouse, [width/2-225+i*150,height/2-180+j*150,150,150], (50,200,50), (255,250,205), border=2)
-                strings += [city.buildings[3*j + i + 1].type, f"Level: {city.buildings[3*j + i + 1].level}"]
-                poss += [(width/2-225+i*150, height/2-165+j*150), (width/2-225+i*150, height/2-120+j*150)]
+                draw_building(win, mouse, city.buildings[3*j + i + 1], (width/2-225+i*150, height/2-180+j*150))
     elif city.size == 9:
         x, y = (3, 3)
         for i in range(x):
             for j in range(y):
-                draw_h_rect(win, mouse, [width/2-225+i*150,height/2-255+j*150,150,150], (50,200,50), (255,250,205), border=2)
-                strings += [city.buildings[3*j + i + 1].type, f"Level: {city.buildings[3*j + i + 1].level}"]
-                poss += [(width/2-225+i*150, height/2-240+j*150), (width/2-225+i*150, height/2-195+j*150)]
+                draw_building(win, mouse, city.buildings[3*j + i + 1], (width/2-225+i*150, height/2-255+j*150))
     elif city.size == 12:
         x, y = (4, 3)
         for i in range(x):
             for j in range(y):
-                draw_h_rect(win, mouse, [width/2-300+i*150,height/2-255+j*150,150,150], (50,200,50), (255,250,205), border=2)
-                strings += [city.buildings[4*j + i + 1].type, f"Level: {city.buildings[4*j + i + 1].level}"]
-                poss += [(width/2-300+i*150, height/2-240+j*150), (width/2-300+i*150, height/2-195+j*150)]
+                draw_building(win, mouse, city.buildings[4*j + i + 1], (width/2-300+i*150, height/2-255+j*150))
 
     # Text            
     draw_text(strings, poss, pacifico, (0,0,0))
@@ -448,7 +469,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
         draw_actions(win, selected, view)
         draw_current_turn(win, world.turn)
     elif view == "City":
-        win.fill((0,255,0))
+        win.fill((50,204,73))
         if task != None:
             draw_costs(task, city)
             if task.type == "Train":
@@ -876,16 +897,7 @@ def main():
                         view = "Start menu"
                         world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""
                     else:
-                        err = ""
-
-
-    draw_h_rect(win, mouse, [width/2-300, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
-    draw_h_rect(win, mouse, [width/2-75, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
-    draw_h_rect(win, mouse, [width/2+150, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
-
-                    
-
-                    
+                        err = ""              
 
 
 main()

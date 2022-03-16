@@ -26,7 +26,7 @@ class World():
             if re.match("^NPC\s\d+$", p.username):
                 self.spawn_city(p, choices([6, 9, 12], weights=[0.2, 0.4, 0.4])[0])
             else:
-                self.spawn_city(p, 9)
+                self.spawn_city(p, 12)
 
     #Adds a new city on the map (returns coords for now)
     def spawn_city(self, player, size):
@@ -463,7 +463,8 @@ class Building():
         self.type = type
         self.level = level
         self.slot = slot
-        self.img = "Dodaj path do slike glede na type"    ##
+        path = type.lower().replace(" ", "_")
+        self.img = f"images/{path}.png"
 
     def __str__(self):
         return f"{self.type} (lvl {self.level})\n"
