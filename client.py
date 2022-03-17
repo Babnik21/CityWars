@@ -46,6 +46,11 @@ def draw_h_rect(win, mouse, pos, c1, c2, border = 0):
 def draw_current_turn(win, turn):
     draw_text([f"Current turn: {turn}"], [(25, 25)], roboto, (0,0,0))
 
+def draw_image(win, path, pos, size):
+    image = pygame.image.load(path)
+    image = pygame.transform.scale(image, size)
+    win.blit(image, pos)
+
     # Draws next turn button in bottom left of the screen
 def draw_next_turn_button(win, mouse, c):
     c2 = tuple([color + 50 if color < 205 else 255 for color in c])         # Color
@@ -100,9 +105,7 @@ def draw_building(win, mouse, building, pos):
     pygame.draw.rect(win, color, [pos[0], pos[1], 150, 150])
 
     # Image
-    image = pygame.image.load(building.img)
-    image = pygame.transform.scale(image, (150, 150))
-    win.blit(image, pos)
+    draw_image(win, building.img, pos, (150, 150))
 
     # Level
     if building.type != "Empty":
@@ -231,12 +234,18 @@ def draw_map(win, mouse, world, player, topleft=None):
     if topleft==None:
         topleft=(-3,-2)
     pygame.draw.rect(win,(0,0,0),[width/2-352,height/2-282,704,504], 2)       # Border
+    pygame.draw.rect(win,(50,204,73),[width/2-350,height/2-280,700,500])       # Background
     for i in range(7):
         for j in range(5):
             draw_h_rect(win, mouse, [width/2-350+i*100,height/2-280+j*100,100,100], (0,0,0), (255,250,205), border=1)
-            if world.map[(topleft[0] + i, topleft[1]+j)] != "Empty":                                                            # Make it print something other than "City"
-                draw_text([f"{world.map[(topleft[0] + i, topleft[1]+j)].owner}'s"], [(width/2-340+i*100,height/2-260+j*100)], roboto, (0,0,0))
-                draw_text(["City"], [(width/2-340+i*100,height/2-230+j*100)], roboto, (0,0,0))
+            if isinstance(world.map[(topleft[0] + i, topleft[1]+j)], City):                                         # Make it print something other than "City"
+                draw_image(win, "images/city.png", (width/2-350+i*100,height/2-280+j*100), (100, 100))
+                pygame.draw.rect(win, (255,255,255),[width/2-345+i*100,height/2-278+j*100,90,18])
+                draw_text(["CityName"], [(width/2-340+i*100,height/2-280+j*100)], roboto, (250,50,50))
+                pygame.draw.ellipse(win, (255, 255, 255), (width/2-330+i*100,height/2-260+j*100, 40, 25))
+                draw_text([str(world.map[(topleft[0] + i, topleft[1]+j)].points)], [(width/2-325+i*100,height/2-255+j*100)], roboto_small, (0,0,0))
+            else:
+                draw_image(win, f"images/{world.map[(topleft[0] + i, topleft[1]+j)]}.png", (width/2-350+i*100,height/2-280+j*100), (100, 100))
 
     # Draws possible actions on main menu based on selected item (text)
 def draw_actions(win, selected, view):
@@ -569,7 +578,6 @@ def main():
                 # Next turn
                 if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
                     world.next_turn()
-                    _ = possible_tasks_npc(city)
                     selected, task, err = None, None, ""
                     view = "City"
 
@@ -733,7 +741,7 @@ def main():
                         for i in range(x):
                             for j in range(y):
                                 if width/2-300+i*150 <= mouse[0] <= width/2-150+i*150 and height/2-255+j*150 <= mouse[1] <= height/2-105+j*150:
-                                    selected, task, err = city.buildings[4*j + i + 1], Task("Upgrade", [city.buildings[3*j + i + 1].type]), ""
+                                    selected, task, err = city.buildings[4*j + i + 1], Task("Upgrade", [city.buildings[4*j + i + 1].type]), ""
                     # Select Wall
                     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:
                         selected, task, err = city.buildings[0], Task("Upgrade", [city.buildings[0].type]), ""
@@ -830,7 +838,7 @@ def main():
                     for i in range(x):
                         for j in range(y):
                             if width/2-350+i*100 <= mouse[0] <= width/2-250+i*100 and height/2-280+j*100 <= mouse[1] <= height/2-180+j*100:
-                                if world.map[(topleft[0]+i,topleft[1]+j)] != "Empty":
+                                if world.map[(topleft[0]+i,topleft[1]+j)] not in [f"Empty{i}" for i in range(1,5)]:
                                     selected = world.map[(topleft[0]+i,topleft[1]+j)]
                     # Map movement
                     if width-150 <= mouse[0] <= width-100 and height-202 <= mouse[1] <= height-152:

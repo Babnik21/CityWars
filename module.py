@@ -16,7 +16,7 @@ class World():
         self.empty_coords = lst
         self.map = {}
         for key in self.empty_coords:
-            self.map[key] = "Empty"
+            self.map[key] = f"Empty{choice([1,2,3,4])}"
 
     def __repr__(self):
         return f"World of size {self.size*2+1}x{self.size*2+1} with {len(self.cities)} cities. Current turn: {self.turn}"
@@ -79,6 +79,7 @@ class City():
         self.size = size
         self.coords = coords
         self.buildings = {}
+        self.points = 1000
         for i in range(size+1):
             self.buildings[i] = Building(slot=i)
         self.army = Army()
@@ -105,6 +106,7 @@ class City():
 
     def build(self, b, slot):
         self.buildings[slot] = Building(b, 1, slot)
+        self.points += values.points[b][1]
 
     def find_slot(self, building):
         for s in self.buildings:
@@ -137,6 +139,7 @@ class City():
         type = self.buildings[slot].type
         lvl = self.buildings[slot].level
         self.buildings[slot] = Building(type, lvl+1, slot)
+        self.points += values.points[b][lvl+1] - values.points[b][lvl]
 
     # Calculates remaining housing space
     def calc_housing(self):
@@ -184,15 +187,15 @@ class City():
 
     # Produces resources
     def update_res(self):
-        gold, iron, food = 0,0,0
+
         # Add values
-        food += values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")] - self.army.count()
-        iron += values.iron_prod[self.find_level("Iron Mine")]
-        gold += values.gold_prod[self.find_level("Gold Mine")]
+        food = values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")] - self.army.count()
+        iron = values.iron_prod[self.find_level("Iron Mine")]
+        gold = values.gold_prod[self.find_level("Gold Mine")]
         # Avoid overflow
         food = min(food, values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[0])
         iron = min(iron, values.warehouse_capacity[self.find_level("Warehouse")] - self.resources[1])
-        gold = min(gold, values.warehouse_capacity[self.find_level("Bank")] - self.resources[2])
+        gold = min(gold, values.bank_capacity[self.find_level("Bank")] - self.resources[2])
         # Update
         self.resources = [self.resources[0] + food, self.resources[1] + iron, self.resources[2] + gold]
 
@@ -495,7 +498,7 @@ def possible_tasks_npc(city):
                 cost = city.required_res(task)
                 if city.enough_res(cost):
                     tasks.append(task)
-                    troops = ceil((1 + troops)*1.3)
+                    troops = ceil((1 + troops)*1.9)
                 else:
                     break
 
@@ -537,10 +540,5 @@ def possible_tasks_npc(city):
                     for k in range(j+1, len(tasks)):
                         if city.enough_res(city.required_res([tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j]:
                             triples.append([tasks[i], tasks[j], tasks[k]])
-
-    for el in triples:
-        print(el)
-
-    print(f"Total available task triples: {len(triples)}")
 
     return triples
