@@ -559,6 +559,7 @@ def main():
         redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, num, player, savename)
         
         for event in pygame.event.get():
+            
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
@@ -589,7 +590,7 @@ def main():
                         selected, task, err, page = None, None, "", 0
 
                 # Next turn
-                if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
+                if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630 and event.button == 1:
                     world.next_turn()
                     if world.winner != None:
                         view = "Game Over"
