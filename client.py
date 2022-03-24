@@ -79,14 +79,10 @@ def draw_bottom_menu(win, mouse, c):
     # Draws map movement buttons ------                 (text needs to be added)
 def draw_map_move_buttons(win, mouse):
     # Rectangles
-    for i, j in zip([-1, 0, 0, 1], [0, -1, 1, 0]):
+    for i, j, img in zip([-1, 0, 0, 1], [0, -1, 1, 0], ["arrow_left", "arrow_up", "arrow_down", "arrow_right"]):
         draw_h_rect(win, mouse, [width-150+52*i,height-150+52*j,50,50], (100, 100, 255), (150, 150, 255))
-
-    # Borders 
-    pygame.draw.rect(win,(0,0,0),[width-152,height-204,54,54],2)     # Up arrow rect
-    pygame.draw.rect(win,(0,0,0),[width-152,height-100,54,54],2)     # Down arrow rect
-    pygame.draw.rect(win,(0,0,0),[width-204,height-152,54,54],2)     # Left arrow tect
-    pygame.draw.rect(win,(0,0,0),[width-100,height-152,54,54],2)     # Right arrow rect
+        draw_image(win, f"images/{img}.png", (width-145+52*i,height-145+52*j), (40,40))
+        pygame.draw.rect(win,(0,0,0),[width-152+52*i,height-152+52*j,54,54],2)     # Right arrow rect
 
     # Draws resource display
 def draw_res(win, city):
@@ -238,7 +234,7 @@ def draw_map(win, mouse, world, player, topleft=None):
     for i in range(7):
         for j in range(5):
             draw_h_rect(win, mouse, [width/2-350+i*100,height/2-280+j*100,100,100], (0,0,0), (255,250,205), border=1)
-            if isinstance(world.map[(topleft[0] + i, topleft[1]+j)], City):                                         # Make it print something other than "City"
+            if isinstance(world.map[(topleft[0] + i, topleft[1]+j)], City):
                 draw_image(win, "images/city.png", (width/2-350+i*100,height/2-280+j*100), (100, 100))
                 pygame.draw.rect(win, (255,255,255),[width/2-345+i*100,height/2-278+j*100,90,18])
                 draw_text(["CityName"], [(width/2-340+i*100,height/2-280+j*100)], roboto, (250,50,50))
@@ -458,6 +454,20 @@ def draw_save_menu(win, mouse, selected, savename):
     poss = [(width/2 - 260, height-105), (width/2-35, height-105), (width/2+195, height-105)]
     draw_text(strings, poss, pacifico, (0,0,0))
 
+    # Draws endgame screen
+def draw_endgame(win, mouse, world):
+    strings = [f"Winner: {world.winner}", f"Ended on turn {world.turn}"]
+    poss = [(200, 200), (200, 250)]
+    draw_text(strings, poss, roboto, (0,0,0))
+
+    # Main menu button
+    draw_h_rect(win, mouse, [width/2-75, height-100, 150, 50], (0,0,0), (250, 205, 50), border = 2)
+    strings_p = ["Main Menu"]
+    poss_p = [(width/2-55, height-105)]
+    draw_text(strings_p, poss_p, pacifico, (0,0,0))
+
+
+
 # Updates display (GUI)
 def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, text, player, savename):
     if view == "Start menu":
@@ -525,6 +535,9 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
         win.fill((100, 100, 100))
         draw_save_menu(win, mouse, selected, savename)
         pass
+    elif view == "Game Over":
+        win.fill((100, 100, 100))
+        draw_endgame(win, mouse, world)
     draw_top_menu(win, mouse)
     pygame.display.update()
 
@@ -578,8 +591,11 @@ def main():
                 # Next turn
                 if view in ["Map", "Reports main", "City"] and 23 <= mouse[0] <= 227 and 580 <= mouse[1] <= 630:
                     world.next_turn()
-                    selected, task, err = None, None, ""
-                    view = "City"
+                    if world.winner != None:
+                        view = "Game Over"
+                    else:
+                        selected, task, err = None, None, ""
+                        view = "City"
 
                 if isinstance(selected, str) and view == "Load game":
                     if width/2-75 <= mouse[0] <= width/2 +75 and height-100 <= mouse[1] <= height-50:
@@ -905,7 +921,10 @@ def main():
                         view = "Start menu"
                         world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""
                     else:
-                        err = ""              
+                        err = ""
+                elif view == "Game Over":
+                    if width/2-75 <= mouse[0] <= width/2+75 and  height-100 <= mouse[1] <= height-50:
+                        view = "Start Menu"
 
 
 main()

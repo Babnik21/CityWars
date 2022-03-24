@@ -2,6 +2,7 @@ from random import choice, shuffle, uniform, choices
 from math import floor, ceil, sqrt
 import values
 import re
+import numpy as np
 
 class World():
     def __init__(self, players):
@@ -9,6 +10,8 @@ class World():
         self.size = 2 + len(self.players)
         self.cities = []
         self.turn = 1
+        self.win_con = len(players)//2 + 1
+        self.winner = None
         lst = []
         for i in range(-self.size, self.size+1):
             for j in range(-self.size, self.size+1):
@@ -38,12 +41,23 @@ class World():
         self.map[coords] = city
         return coords
 
+    def game_over(self):
+        for p in self.players:
+            if len(p.cities) >= self.win_con:
+                self.winner = p.username
+
     def next_turn(self):
         shuffle(self.cities)
         for city in self.cities:
-            for task in city.current_tasks:
-                if task.type != None:                               # Is this neccessary?
-                    city.ongoing_tasks.append(task)
+            if re.match("^NPC\s\d+$", city.owner.username):
+                options = possible_tasks_npc(city)
+                weights = list(range(1, len(options)+1)).reverse()
+                selected_tasks = choices(options, weights)[0]
+                for task in selected_tasks:
+                    city.update_task_endturn(task, self.turn)
+                update_building_slots(city, selected_tasks)
+                city.current_tasks = selected_tasks
+            city.ongoing_tasks += city.current_tasks
             city.current_tasks = []
             delete = []
             city.ongoing_tasks.sort()
@@ -100,6 +114,12 @@ class City():
 
     def __str__(self):
         return f"City owned by {self.owner.username} at {self.coords}. Current tasks: {len(self.current_tasks)}"
+
+    def __eq__(self, other):
+        if isinstance(other, City):
+            return self.coords == other.coords
+        else:
+            return False
 
     def train(self, units, num):
         self.army.train(units, num)
@@ -472,6 +492,9 @@ class Building():
     def __str__(self):
         return f"{self.type} (lvl {self.level})\n"
 
+    def __repr__(self):
+        return f"{self.type} (lvl {self.level})"
+
     def __eq__(self, other):
         if isinstance(other, Building):
             return self.type == other.type
@@ -542,3 +565,12 @@ def possible_tasks_npc(city):
                             triples.append([tasks[i], tasks[j], tasks[k]])
 
     return triples
+
+def update_building_slots(city, tasks):
+    slots = [i for i in city.buildings if city.buildings[i].type == "Empty"]
+    for task in tasks:
+        if task.type == "Build" and task.data[0] != "Wall":
+            slot = choice(slots)
+        else:
+            slot = 0
+        task.data = [task.data[0], slot]
