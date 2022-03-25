@@ -111,7 +111,7 @@ def draw_building(win, mouse, building, pos):
     # Highlighting border
     draw_h_rect(win, mouse, [pos[0],pos[1],150,150], color, (255,250,205), border=2)
 
-    # Draws city (just building outlines for now)
+    # Draws city 
 def draw_city(win, mouse, city):
     pygame.draw.rect(win,(255,255,255),[width/2-352,height/2-282,704,504], 2)       # Border
     
@@ -121,10 +121,7 @@ def draw_city(win, mouse, city):
         image = pygame.transform.scale(image, (700, 530))
         win.blit(image, (width/2-360, height/2-295))
         pygame.draw.circle(win, (255, 255, 255), (width/2, height/2+210), 15)
-        draw_text([str(city.find_level("Wall"))], [(width/2-6, height/2+198)], roboto, (0,0,0))
-
-        #string = f"Wall level {city.find_level('Wall')}"
-        #draw_text([string], [(width/2-70, 520)], pacifico_small, (0,0,0))
+        #draw_text([str(city.find_level("Wall"))], [(width/2-6, height/2+198)], roboto, (0,0,0))
 
     if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:     # Wall
         pygame.draw.rect(win, (255, 250, 205), [width/2-300, height/2+195, 600, 25], 2)
@@ -148,6 +145,10 @@ def draw_city(win, mouse, city):
 
     # Text            
     draw_text(strings, poss, pacifico, (0,0,0))
+
+    # Draws city points
+def draw_points(city):
+    draw_text([f"Points: {city.points}"], [(250, 25)], roboto, (0,0,0))
 
     # Draws tasks
 def draw_tasks(win, mouse, city):
@@ -224,6 +225,14 @@ def draw_full_report(win, mouse, report):
     strings.append(luck)
     poss.append((width/2-200, height/2+170))
     draw_text(strings, poss, roboto, (0,0,0))
+
+    # Draws city details on the side menu (for map view)
+def draw_city_info(win, selected):
+    pygame.draw.rect(win,(255,255,255),[23,55,204,504], 2)          # Border
+    if isinstance(selected, City):
+        strings = [f"City: City Name", f"Points: {selected.points}", f"Owner: {selected.owner.username}", f"Coords: {selected.coords}"]
+        poss = [(28, 58), (28, 88), (28, 118), (28, 148)]
+        draw_text(strings, poss, roboto, (0,0,0))
 
     # Draws map with cities 
 def draw_map(win, mouse, world, player, topleft=None):
@@ -500,6 +509,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
         draw_res(win, city)
         draw_city(win, mouse, city)
         draw_tasks(win, mouse, city)
+        draw_points(city)
         draw_bottom_menu(win, mouse, (100, 255, 100))
         draw_next_turn_button(win, mouse, (100, 255, 100))
         draw_actions(win, selected, view)
@@ -508,6 +518,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
         win.fill((0,0,255))
         draw_map(win, mouse, world, player, topleft)
         draw_map_move_buttons(win, mouse)
+        draw_city_info(win, selected)
         draw_bottom_menu(win, mouse, (100, 100, 255))
         draw_next_turn_button(win, mouse, (100, 100, 255))
         draw_actions(win, selected, view)

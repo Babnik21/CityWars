@@ -93,11 +93,10 @@ class City():
         self.size = size
         self.coords = coords
         self.buildings = {}
-        self.points = 1000
+        self.points = 1
         for i in range(size+1):
             self.buildings[i] = Building(slot=i)
         self.army = Army()
-        # Change default resource values
         self.resources = [150, 150, 5]
         self.current_tasks = []
         self.ongoing_tasks = []
