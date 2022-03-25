@@ -244,9 +244,15 @@ def draw_map(win, mouse, world, player, topleft=None):
         for j in range(5):
             draw_h_rect(win, mouse, [width/2-350+i*100,height/2-280+j*100,100,100], (0,0,0), (255,250,205), border=1)
             if isinstance(world.map[(topleft[0] + i, topleft[1]+j)], City):
+                if re.match("^NPC\s\d+$", world.map[(topleft[0] + i, topleft[1]+j)].owner.username):
+                    color = (210, 105, 30)
+                elif re.match("^AI\s\d+$", world.map[(topleft[0] + i, topleft[1]+j)].owner.username):
+                    color = (250, 50, 50)
+                else: 
+                    color = (0, 0, 0)
                 draw_image(win, "images/city.png", (width/2-350+i*100,height/2-280+j*100), (100, 100))
                 pygame.draw.rect(win, (255,255,255),[width/2-345+i*100,height/2-278+j*100,90,18])
-                draw_text(["CityName"], [(width/2-340+i*100,height/2-280+j*100)], roboto, (250,50,50))
+                draw_text(["CityName"], [(width/2-340+i*100,height/2-280+j*100)], roboto, color)
                 pygame.draw.ellipse(win, (255, 255, 255), (width/2-330+i*100,height/2-260+j*100, 40, 25))
                 draw_text([str(world.map[(topleft[0] + i, topleft[1]+j)].points)], [(width/2-325+i*100,height/2-255+j*100)], roboto_small, (0,0,0))
             else:
@@ -446,7 +452,7 @@ def draw_load_menu(win, mouse, page):
     draw_text(strings, poss, roboto, (0,0,0))
 
     # Draws exit menu (save options)
-def draw_save_menu(win, mouse, selected, savename):
+def draw_save_menu(win, mouse, selected, savename, err):
     c = (255, 255, 255) if selected == "Text prompt" else (200, 200, 200)
     pygame.draw.rect(win,c,[0, 150, width, 25])                 # text prompt rect
 
@@ -462,6 +468,9 @@ def draw_save_menu(win, mouse, selected, savename):
     strings = ["Back", "Save", "Exit"]
     poss = [(width/2 - 260, height-105), (width/2-35, height-105), (width/2+195, height-105)]
     draw_text(strings, poss, pacifico, (0,0,0))
+
+    #Error
+    draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))  
 
     # Draws endgame screen
 def draw_endgame(win, mouse, world):
@@ -544,8 +553,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
         draw_current_turn(win, world.turn)
     elif view == "Save menu":
         win.fill((100, 100, 100))
-        draw_save_menu(win, mouse, selected, savename)
-        pass
+        draw_save_menu(win, mouse, selected, savename, err)
     elif view == "Game Over":
         win.fill((100, 100, 100))
         draw_endgame(win, mouse, world)
@@ -923,12 +931,15 @@ def main():
                         selected = "Text prompt"
                     else: 
                         selected = None
-                    if width/2-300 <= mouse[0] <= width/2+150 and  height-100 <= mouse[1] <= height-50:
+                    if width/2-300 <= mouse[0] <= width/2-150 and  height-100 <= mouse[1] <= height-50:
                         view = "City"
                     elif width/2-75 <= mouse[0] <= width/2+75 and  height-100 <= mouse[1] <= height-50:
-                        with open(f"saves/{savename}", "wb") as file:
-                            pickle.dump(world, file)
-                        err = "Saved!"
+                        if savename == "":
+                            err = "Name can't be empty!"
+                        else:
+                            with open(f"saves/{savename}", "wb") as file:
+                                pickle.dump(world, file)
+                            err = "Saved!"
                     elif width/2+150 <= mouse[0] <= width/2+300 and  height-100 <= mouse[1] <= height-50:
                         view = "Start menu"
                         world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""

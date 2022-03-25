@@ -277,15 +277,20 @@ class City():
         conq = False
         a_pow = task.data[0].power("A", luck, wall)
         d_pow = task.data[2].army.power("D", luck, wall)
-        if task.data[3] == "Raid" or task.data[3] == "Espionage":
-            if task.data[3] == "Espionage" and task.data[2].army.units["Spy"] < 0:
-                return Army([0,0,0,0,0]), Army([0,0,0,0,0]), luck, False, conq
+        if task.data[3] == "Raid":
+            rate = a_pow/(a_pow + d_pow)
+            d_dead = task.data[2].army * rate
+            a_dead = task.data[0] * (1-rate)
+            return a_dead, d_dead, luck, True, conq
+        elif task.data[3] == "Espionage":
+            if task.data[2].army.units["Spy"] == 0:
+                return Army([0,0,0,0,0]), Army([0,0,0,0,0]), luck, False, False
             else:
-                rate = a_pow/(a_pow + d_pow)
-                d_dead = task.data[2].army * rate
-                a_dead = task.data[0] * (1-rate)
-                return a_dead, d_dead, luck, True, conq
-        if task.data[3] == "Attack" or task.data[3] == "Conquest":
+                a_spies = task.data[0].units["Spy"]
+                d_spies = task.data[2].army.units["Spy"]
+                a_dead = Army([0,0,0,min(a_spies, ceil(d_spies/((1+luck)*1.2))),0])
+                return a_dead, Army([0,0,0,0,0]), luck, True, conq
+        else:
             if a_pow >= d_pow:
                 rate = d_pow / a_pow
                 d_dead = task.data[2].army
