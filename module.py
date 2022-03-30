@@ -10,7 +10,7 @@ class World():
         self.size = 2 + len(self.players)
         self.cities = []
         self.turn = 1
-        self.win_con = len(players)//2 + 1
+        self.win_con = len(self.players)//2 + 1
         self.winner = None
         lst = []
         for i in range(-self.size, self.size+1):
@@ -42,7 +42,9 @@ class World():
         return coords
 
     def game_over(self):
+        print(self.win_con, len(self.players))
         for p in self.players:
+            print(p.username, len(p.cities))
             if len(p.cities) >= self.win_con:
                 self.winner = p.username
 
@@ -57,6 +59,7 @@ class World():
                     city.update_task_endturn(task, self.turn)
                 update_building_slots(city, selected_tasks)
                 city.current_tasks = selected_tasks
+                city.spend_res(city.required_res(selected_tasks))
             city.ongoing_tasks += city.current_tasks
             city.current_tasks = []
             delete = []
@@ -69,6 +72,7 @@ class World():
             city.ongoing_tasks = [item for item in city.ongoing_tasks if item not in delete]
             city.reports.sort()
         self.turn += 1
+        self.game_over()
 
 class Player():
     def __init__(self, username, cities=[]):
@@ -112,7 +116,7 @@ class City():
         return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __str__(self):
-        return f"City owned by {self.owner.username} at {self.coords}. Current tasks: {len(self.current_tasks)}"
+        return f"City owned by {self.owner.username} at {self.coords}, size: {self.size}, has {len(self.current_tasks)} current tasks."
 
     def __eq__(self, other):
         if isinstance(other, City):
@@ -243,7 +247,7 @@ class City():
         self.spend_res(loot)
         return loot
 
-    # Returns amount of resources required to start selected task
+    # Returns amount of resources required to start selected task (works for task or list of tasks)
     def required_res(self, task):
         if isinstance(task, Task):
             if task.type == "Build" or task.type == "Upgrade":
@@ -345,9 +349,9 @@ class Task():
             return f"Train {self.data[1]} x {self.data[0]}.\nCompleted: turn {self.end_turn}."
         elif self.type == "Move Troops":
             if self.data[3] == "Return":
-                return f"Troops returning from {self.data[1].coords} \nReturning army: {self.data[0]}.\nCompleted on turn {self.end_turn}"
+                return f"Return from {self.data[1].coords} \nReturning army:\n{self.data[0]}.\nCompleted: turn {self.end_turn}"
             else: 
-                return f"{self.data[3]}: {self.data[2].coords}\nArmy: {self.data[0]}\nCompleted: turn {self.end_turn}"
+                return f"{self.data[3]}: {self.data[2].coords}\nArmy: \n{self.data[0]}\nCompleted: turn {self.end_turn}"
         else:
             return f"{self.type} {self.data[0]}. \nCompleted: turn {self.end_turn}"
 
@@ -361,15 +365,23 @@ class Task():
         if isinstance(other, Task):
             if self.type == "Build" and other.type == "Build":
                 return self.data[0]==other.data[0] or self.data[1] == other.data[1]
-            elif self.type in ["Upgrade", "Train"]:
+            elif self.type == "Upgrade":
                 return self.data[0] == other.data[0] and self.type == other.type
+            elif self.type == "Train":
+                return self.data[0] == other.data[0] and self.type == other.type and self.end_turn == other.end_turn
         return False
 
     def __lt__(self, other):
         return self.end_turn < other.end_turn
 
+    def housing_req(self):
+        if self.type == "Train":
+            return self.data[1]
+        else:
+            return 0
+
 class Report():
-    def __init__(self, a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, read = False):
+    def __init__(self, a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, conq = False, read = False):
         self.turn = turn
         self.a_city = a_city
         self.d_city = d_city
@@ -380,6 +392,7 @@ class Report():
         self.luck = luck
         self.type = type
         self.read = read
+        self.conq = conq
         
     def __repr__(self):
         return f"{self.type} on {self.d_city.coords}, turn {self.turn}."
@@ -439,7 +452,7 @@ class Army():
         sniper = ceil(self.units["Sniper"] * other)
         tank = ceil(self.units["Tank"] * other)
         spy = ceil(self.units["Spy"] * other)
-        general = ceil(self.units["General"] * other)
+        general = round(self.units["General"] * other)
         return Army([infantryman, sniper, tank, spy, general])
 
     def __contains__(self, other):
@@ -513,6 +526,7 @@ def possible_tasks_npc(city):
     tasks = []
     building_slots = []
     building_tasks = []
+    space = city.calc_housing()
     for b in city.buildings.values():
         if b.level == 0:
             building_slots.append(b.slot)
@@ -523,9 +537,9 @@ def possible_tasks_npc(city):
             while True:
                 task = Task("Train", data = [values.units_trained_in[b.type], troops], end_turn=0)
                 cost = city.required_res(task)
-                if city.enough_res(cost):
+                if city.enough_res(cost) and space >= troops:
                     tasks.append(task)
-                    troops = ceil((1 + troops)*1.9)
+                    troops = ceil((1 + troops)*1.8)
                 else:
                     break
 
@@ -556,25 +570,25 @@ def possible_tasks_npc(city):
                 if city.enough_res(city.required_res([building_tasks[i], tasks[j]])):
                     triples.append([building_tasks[i], tasks[j]])
                     for k in range(j+1, len(tasks)):
-                        if city.enough_res(city.required_res([building_tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j]:
+                        if city.enough_res(city.required_res([building_tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j] and tasks[j].housing_req() + tasks[k].housing_req() <= space:
                             triples.append([building_tasks[i], tasks[j], tasks[k]])
     for i in range(len(tasks)):
         if city.enough_res(city.required_res([tasks[i]])):
             triples.append([tasks[i]])
             for j in range(i+1, len(tasks)):
-                if city.enough_res(city.required_res([tasks[i], tasks[j]])) and tasks[i] != tasks[j]:
+                if city.enough_res(city.required_res([tasks[i], tasks[j]])) and tasks[i] != tasks[j] and tasks[i].housing_req() + tasks[j].housing_req() <= space:
                     triples.append([tasks[i], tasks[j]])
                     for k in range(j+1, len(tasks)):
-                        if city.enough_res(city.required_res([tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j]:
+                        if city.enough_res(city.required_res([tasks[i], tasks[j], tasks[k]])) and tasks[k] != tasks[j] and tasks[i].housing_req() + tasks[j].housing_req() + tasks[k].housing_req() <= space:
                             triples.append([tasks[i], tasks[j], tasks[k]])
 
     return triples
 
 def update_building_slots(city, tasks):
-    slots = [i for i in city.buildings if city.buildings[i].type == "Empty"]
+    slots = [i for i in city.buildings if city.buildings[i].type == "Empty" and i != 0]
     for task in tasks:
-        if task.type == "Build" and task.data[0] != "Wall":
-            slot = choice(slots)
-        else:
+        if task.type == "Build":
             slot = 0
-        task.data = [task.data[0], slot]
+            if task.data[0] != "Wall":
+                slot = choice(slots)
+            task.data = [task.data[0], slot]

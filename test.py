@@ -28,7 +28,7 @@ class Test():
         self.type = "Alpha"
         self.second = f"Jaz sem {self.type}"
 
-
+print(15//2)
 
 
 

@@ -1,5 +1,6 @@
 import pickle
 import pygame
+import time
 import sys
 from module import *
 from values import *
@@ -116,14 +117,14 @@ def draw_city(win, mouse, city):
     pygame.draw.rect(win,(255,255,255),[width/2-352,height/2-282,704,504], 2)       # Border
     
     # Wall
-    if city.find_level("Wall") > 0:
+    if city.find_level("Wall") != 0:
         image = pygame.image.load("images/wall.png")
         image = pygame.transform.scale(image, (700, 530))
         win.blit(image, (width/2-360, height/2-295))
         pygame.draw.circle(win, (255, 255, 255), (width/2, height/2+210), 15)
-        #draw_text([str(city.find_level("Wall"))], [(width/2-6, height/2+198)], roboto, (0,0,0))
+        draw_text([str(city.find_level("Wall"))], [(width/2-6, height/2+198)], roboto, (0,0,0))
 
-    if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:     # Wall
+    if width/2-300 <= mouse[0] <= width/2+300 and height/2+195 <= mouse[1] <= height/2+220:     # Wall rect
         pygame.draw.rect(win, (255, 250, 205), [width/2-300, height/2+195, 600, 25], 2)
 
     strings, poss = [], []
@@ -230,8 +231,8 @@ def draw_full_report(win, mouse, report):
 def draw_city_info(win, selected):
     pygame.draw.rect(win,(255,255,255),[23,55,204,504], 2)          # Border
     if isinstance(selected, City):
-        strings = [f"City: City Name", f"Points: {selected.points}", f"Owner: {selected.owner.username}", f"Coords: {selected.coords}"]
-        poss = [(28, 58), (28, 88), (28, 118), (28, 148)]
+        strings = [f"City: City Name", f"Points: {selected.points}", f"Owner: {selected.owner.username}", f"Coords: {selected.coords}", f"Size: {selected.size}"]
+        poss = [(28, 58), (28, 88), (28, 118), (28, 148), (28, 178)]
         draw_text(strings, poss, roboto, (0,0,0))
 
     # Draws map with cities 
@@ -424,10 +425,11 @@ def draw_sp_settings(win, mouse, err, username, num, selected):
 def draw_costs(task, city):
     if task.data[0] != "Empty":
         res = city.required_res(task)
-        c_res = (255, 0, 0) if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2] else (255, 255, 50)
-        strings_s_res = ["Cost:", f"Food: {res[0]}", f"Iron: {res[1]}", f"Gold: {res[2]}"]
-        poss_s_res = [(width-205, 420), (width - 160, 420), (width-160, 436), (width-160, 452)]
-        draw_text(strings_s_res, poss_s_res, roboto_small, c_res)
+        if res != [0,0,0]:
+            c_res = (255, 0, 0) if res[0] > city.resources[0] or res[1] > city.resources[1] or res[2] > city.resources[2] else (255, 255, 50)
+            strings_s_res = ["Cost:", f"Food: {res[0]}", f"Iron: {res[1]}", f"Gold: {res[2]}"]
+            poss_s_res = [(width-205, 420), (width - 160, 420), (width-160, 436), (width-160, 452)]
+            draw_text(strings_s_res, poss_s_res, roboto_small, c_res)
 
     # Draws load menu
 def draw_load_menu(win, mouse, page):
@@ -590,7 +592,7 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # Changing view / quitting
-                if view != "Start menu" and view != "SP setup" and view != "Load game":               # Can't change views if no game is running!
+                if view not in ["Start menu", "SP setup" ,"Load game", "Game Over"]:               # Can't change views if no game is running!
                     if width-100 <= mouse[0] <= width and 0 <= mouse[1] <= 25:
                         view = "Save menu"
                         selected, task, err, page = None, None, "", 0
@@ -815,6 +817,7 @@ def main():
                                     task.data[1] -= 10
                             if width-202 <= mouse[0] <= width-52 and 490 <= mouse[1] <= 540:
                                 err = ""
+                                city.update_task_endturn(task, world.turn)
                                 if task in city.current_tasks:
                                     err = "Already training!"
                                 elif len(city.current_tasks) == 3:
@@ -823,7 +826,6 @@ def main():
                                     err = "Select more units!"
                                 else:
                                     res = city.required_res(task)
-                                    city.update_task_endturn(task, world.turn)
                                     city.current_tasks.append(task)
                                     city.spend_res(res)
                                     selected, task, err = None, None, ""
@@ -894,7 +896,7 @@ def main():
                 elif view == "Troop select":
                     # Unit selection
                     for i, unit in enumerate(Army().units): # For each line
-                        for change, j in zip([-1, -task.data[0].units[unit], 1, 10, 100, city.army.units[unit]], range(6)): # for each column
+                        for change, j in zip([-1, -task.data[0].units[unit], 1, 10, 100, city.army.units[unit] - task.data[0].units[unit]], range(6)): # for each column
                             if width/2-102+j*70 <= mouse[0] <= width/2-48+j*70 and height/2-247+95*i <= mouse[1] <= height/2-193+95*i: # If clicked
                                 if 0 <= task.data[0].units[unit] + change <= city.army.units[unit]:    # If enough troops and not going below 0
                                     task.data[0].units[unit] += change         # Add troops 
@@ -945,9 +947,11 @@ def main():
                         world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""
                     else:
                         err = ""
+
                 elif view == "Game Over":
                     if width/2-75 <= mouse[0] <= width/2+75 and  height-100 <= mouse[1] <= height-50:
-                        view = "Start Menu"
+                        view = "Start menu"
+                        world, player, city, topleft, selected, task, savename, err = None, None, None, None, None, None, "", ""
 
 
 main()
