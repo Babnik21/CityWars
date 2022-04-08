@@ -1,0 +1,71 @@
+\documentclass[a4paper, 16pt]{article}
+\usepackage[slovene]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{City Wars \\ Kratko poročilo}
+\date{April 2022}
+\author{Jure Babnik}
+
+
+\begin{document}
+
+\maketitle
+
+\section{O igri in pravila igre}
+
+Igra je zasnovana na podoben način kot brskalniške igre \textit{Travian}, \textit{Ikariam} in \textit{Vojna plemen}, nekaj navdiha pa jemlje tudi iz drugih strateških iger.
+Igralec v igri razvija svoje mesto tako, da zgradi nove ali izboljša že obstoječe zgradbe, poleg tega pa lahko izuri vojsko. Za to potrebuje surovine, ki jih lahko pridobiva s pomočjo določenih zgradb, 
+ali pa jih ukrade iz nasprotnikovih mest. S svojo vojsko lahko napade druga mesta in jih tudi osvoji. Za zmago je potrebno nadzorovati več kot polovico vseh mest na svetu.
+
+Igra temelji na potezah; vsi igralci poteze opravijo istočasno, izvedejo pa se ko se vsi igralci odločijo za svojo potezo. V vsaki potezi ima igralec v vsakem mestu na voljo 
+do največ \textbf{tri} različne akcije, ki vključujejo gradnjo/nadgradnjo zgradb, urjenje vojske ali napade na druga mesta. Na voljo je 15 različnih zgradb, kjer vsaka od njih 
+opravlja določeno funkcijo in prinese določene koristi, ter 5 različnih enot, ki imajo različne kvalitete (napadalna/obrambna moč, hitrost, nosilnost plena).
+
+Trenutno je na voljo le način za enega igralca, z 0-9 računalniškimi nasprotniki (ki trenutno še ne počnejo nič). Na svetu se pojavijo tudi samostojna mesta, ki se neodvisno razvijajo
+po svoje, njihov namen pa je le ta, da jih ostali igralci zavzamejo brez večjih težav.
+
+\section{Jezik in knjižnice}
+
+Odločil sem se za uporabo programskega jezika \textit{Python}, saj mi je najbolj domač, igra pa ne zahteva nobenih naprednih grafičnih elementov in je knjižnica 
+\textit{Pygame} več kot dovolj uporabna za moje potrebe. 
+
+\section{Trenutno stanje igre}
+
+Sama igra je že bolj ali manj končana, manjkajo le še malenkosti in pa estetski popravki ter kakšen bug-fix. Definiral sem nekaj razredov in napisal nekaj funkcij,
+nato pa sestavil preprost vmesnik s pomočjo knjižnice \textit{Pygame}. Vmesnik ima v igri štiri različne poglede:
+\begin{itemize}
+    \item Pogled mesta, kjer igralec lahko vidi svoje mesto in upravlja z njim
+    \item Zemljevid, kjer igralec lahko vidi druga mesta
+    \item Poročila, kjer igralec lahko prebere poročila preteklih bitk
+    \item Pregled, kjer igralec lahko vidi vsa svoja mesta in izbere tistega, s katerim želi upravljati
+\end{itemize}
+Vsak izmed njih je bolj ali manj končan, sestavljen iz preprostih oblik in sličic, ki sem jih našel na internetu. Mogoče je tudi shraniti trenutno igro in jo potem nadaljevati
+ob naslednjem igranju. 
+
+Najbolj zanimiv del projekta so računalniški nasprotniki. Do sedaj sem implementiral le navodila za razvoj neodvisnih mest. Želel sem da se obnašajo malce "neumno" in 
+da se razvijajo počasneje kot ostali igralci, kar mi je uspelo na preprost način; v vsaki potezi program poišče vse mogoče poteze, nato pa po naključju izbere eno izmed potez. 
+ 
+
+\section{Nadaljni načrt}
+
+Poleg lepotnih popravkov in podobnega mi je ostal še najtežji del naloge - razviti samostojnega igralca oz. "bot"-a. Želim, da ovrednoti stanje igre le s pomočjo informacij, 
+ki so na voljo tudi uporabniku in na podlagi tega izbere najboljšo možno potezo. Na ta način bi lahko preprosto implementiral tudi različne težavnosti (kjer imajo pri večji 
+težavnosti nasprotniki večjo verjetnost, da izberejo optimalno potezo, pri nižji pa manjšo).
+
+Ideja je, da napišem funkcijo, ki ovrednoti trenutno stanje igre z upoštevanjem sledečih faktorjev:
+\begin{itemize}
+    \item Trenutne zgradbe v vasi
+    \item Trenutna vojska (v vasi in na poti)
+    \item Trenutne surovine na voljo
+    \item Doprinos posamezne poteze
+    \item Zadnja informacija o nasprotnikovi vojski oz. ugibanje
+    \item Morda še drugi
+\end{itemize}
+
+S tem bo moja igra kompletna in pripravljena za igranje.
+
+\end{document}
