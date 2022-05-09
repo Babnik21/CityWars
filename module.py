@@ -3,14 +3,16 @@ from math import floor, ceil, sqrt
 import values
 import re
 import numpy as np
+import copy
 
 class World():
     def __init__(self, players):
+        self.difficulty = 1
         self.players = players
         self.size = 2 + len(self.players)
         self.cities = []
         self.turn = 1
-        self.win_con = len(self.players)//2 + 1
+        self.win_con = 1000
         self.winner = None
         lst = []
         for i in range(-self.size, self.size+1):
@@ -30,6 +32,7 @@ class World():
                 self.spawn_city(p, choices([6, 9, 12], weights=[0.2, 0.4, 0.4])[0])
             else:
                 self.spawn_city(p, 12)
+        self.win_con = len(self.players)//2 + 1
 
     #Adds a new city on the map (returns coords for now)
     def spawn_city(self, player, size):
@@ -52,14 +55,9 @@ class World():
         shuffle(self.cities)
         for city in self.cities:
             if re.match("^NPC\s\d+$", city.owner.username):
-                options = possible_tasks_npc(city)
-                weights = list(range(1, len(options)+1)).reverse()
-                selected_tasks = choices(options, weights)[0]
-                for task in selected_tasks:
-                    city.update_task_endturn(task, self.turn)
-                update_building_slots(city, selected_tasks)
-                city.current_tasks = selected_tasks
-                city.spend_res(city.required_res(selected_tasks))
+                npc_move(city, self.turn)
+            elif re.match("^AI\s\d+$", city.owner.username):
+                ai_move(city, self)
             city.ongoing_tasks += city.current_tasks
             city.current_tasks = []
             delete = []
@@ -116,7 +114,7 @@ class City():
         return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __str__(self):
-        return f"City owned by {self.owner.username} at {self.coords}, size: {self.size}, has {len(self.current_tasks)} current tasks."
+        return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __eq__(self, other):
         if isinstance(other, City):
@@ -162,7 +160,7 @@ class City():
         type = self.buildings[slot].type
         lvl = self.buildings[slot].level
         self.buildings[slot] = Building(type, lvl+1, slot)
-        self.points += values.points[b][lvl+1] - values.points[b][lvl]
+        self.points += values.points[b][lvl+1]
 
     # Calculates remaining housing space
     def calc_housing(self):
@@ -191,11 +189,7 @@ class City():
                 r_army = task.data[0] - result[0]           # Atk surviving army
                 self.make_report(task, result)              # Make reports
                 task.data[2].army -= result[1]              # Kill defending units
-                loot = [0, 0, 0]
-                if task.data[3] == "Raid":                  # only executes when raiding; other attacks dont yield any loot
-                    cap = r_army.capacity()                 # Calculate carrying capacity
-                    loot = task.data[2].steal_res(cap)      # Remove loot from defending city
-                elif task.data[3] == "Conquest" and result[4]:
+                if task.data[3] == "Conquest" and result[4]:
                     loser = task.data[2].owner              # If conquered, change village owner
                     loser.cities.remove(task.data[2])
                     task.data[2].owner = self.owner
@@ -203,7 +197,7 @@ class City():
 
                 # Make new task for troop return
                 if r_army != 0:
-                    self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", loot], 2))   # Change end turn !!!!
+                    self.ongoing_tasks.append(Task("Move Troops", [r_army, task.data[2], self, "Return", result[5]], 2))   # Change end turn !!!!
                     self.update_task_endturn(self.ongoing_tasks[-1], curr_turn + 1)
         elif task.type == "Train":
             self.army.units[task.data[0]] += task.data[1]
@@ -285,15 +279,18 @@ class City():
             rate = a_pow/(a_pow + d_pow)
             d_dead = task.data[2].army * rate
             a_dead = task.data[0] * (1-rate)
-            return a_dead, d_dead, luck, True, conq
+            r_army = task.data[0] - a_dead           # Atk surviving army
+            cap = r_army.capacity()                 # Calculate carrying capacity
+            loot = task.data[2].steal_res(cap)      # Remove loot from defending city
+            return a_dead, d_dead, luck, True, conq, loot
         elif task.data[3] == "Espionage":
             if task.data[2].army.units["Spy"] == 0:
-                return Army([0,0,0,0,0]), Army([0,0,0,0,0]), luck, False, False
+                return Army([0,0,0,0,0]), Army([0,0,0,0,0]), luck, False, False, [0,0,0]
             else:
                 a_spies = task.data[0].units["Spy"]
                 d_spies = task.data[2].army.units["Spy"]
                 a_dead = Army([0,0,0,min(a_spies, ceil(d_spies/((1+luck)*1.2))),0])
-                return a_dead, Army([0,0,0,0,0]), luck, True, conq
+                return a_dead, Army([0,0,0,0,0]), luck, True, conq, [0,0,0]
         else:
             if a_pow >= d_pow:
                 rate = d_pow / a_pow
@@ -305,7 +302,7 @@ class City():
                 d_dead = task.data[2].army * rate
             if task.data[3] == "Conquest" and task.data[0].units["General"] > a_dead.units["General"]:
                 conq = True
-            return a_dead, d_dead, luck, True, conq
+            return a_dead, d_dead, luck, True, conq, [0,0,0]
 
     # Adds report to attacker village's reports and returns defender report to be manually appended to its reports (if not, returns None)
     def make_report(self, task, combat_calc):
@@ -320,8 +317,9 @@ class City():
         luck = combat_calc[2]
         spotted = combat_calc[3]
         conq = combat_calc[4]
-        r_atk = Report(a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, conq)
-        r_def = Report(a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, conq)
+        loot = combat_calc[5]
+        r_atk = Report(a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, loot, conq)
+        r_def = Report(a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, loot, conq)
         self.reports.append(r_atk)
         if spotted:
             d_city.reports.append(r_def)
@@ -381,7 +379,7 @@ class Task():
             return 0
 
 class Report():
-    def __init__(self, a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, conq = False, read = False):
+    def __init__(self, a_city, d_city, turn, type, a_army, d_army, a_dead, d_dead, luck, loot, conq = False, read = False):
         self.turn = turn
         self.a_city = a_city
         self.d_city = d_city
@@ -393,6 +391,7 @@ class Report():
         self.type = type
         self.read = read
         self.conq = conq
+        self.loot = loot
         
     def __repr__(self):
         return f"{self.type} on {self.d_city.coords}, turn {self.turn}."
@@ -406,10 +405,12 @@ class Report():
         d_army = f"Defending army: \nInfantryman: {self.d_army.units['Infantryman']}\nSniper: {self.d_army.units['Sniper']}\nTank: {self.d_army.units['Tank']}\nSpy: {self.d_army.units['Spy']}\nGeneral: {self.d_army.units['General']}."
         d_dead = f"Casualties: \nInfantryman: {self.d_dead.units['Infantryman']}\nSniper: {self.d_dead.units['Sniper']}\nTank: {self.d_dead.units['Tank']}\nSpy: {self.d_dead.units['Spy']}\nGeneral: {self.d_dead.units['General']}."
         if self.luck > 0:
-            luck = f"Attackers were lucky ({round(self.luck*100, 2)}% bonus power)"
+            luck = f"Attackers were lucky ({round(self.luck*100, 2)}% bonus power)."
         else:
-            luck = f"Attackers were unlucky ({round(-self.luck*100, 2)}% power deduction)"
-        return headline + a_army + a_dead + d_army + d_dead + luck
+            luck = f"Attackers were unlucky ({round(-self.luck*100, 2)}% power deduction)."
+        loot = f"Attackers were able to steal {self.loot[0]} food, {self.loot[1]} iron and {self.loot[2]} gold."
+        conq = "The city has been conquered." if self.conq else "The city has not been conquered."
+        return headline + a_army + a_dead + d_army + d_dead + luck + loot + conq
 
     def __lt__(self, other):
         return self.turn > other.turn
@@ -521,7 +522,7 @@ class Building():
 def distance(c1, c2):
     return sqrt((c1.coords[0] - c2.coords[0])**2 + (c1.coords[1] - c2.coords[1])**2)
 
-# Returns a list of possible tasks. Doesn't include troops
+# Returns a list of possible tasks.
 def possible_tasks_npc(city):
     tasks = []
     building_slots = []
@@ -588,7 +589,53 @@ def update_building_slots(city, tasks):
     slots = [i for i in city.buildings if city.buildings[i].type == "Empty" and i != 0]
     for task in tasks:
         if task.type == "Build":
-            slot = 0
-            if task.data[0] != "Wall":
-                slot = choice(slots)
+            slot = choice(slots)
+            if task.data[0] == "Wall":
+                slot = 0
             task.data = [task.data[0], slot]
+
+def utility(city, triple, turn):
+    copy_1 = copy.deepcopy(city)
+    update_building_slots(city, triple)
+    for task in triple:
+        copy_1.execute(task, turn)
+    u = copy_1.points     # Points
+    u += (copy_1.resources[0] + copy_1.resources[1])**0.25 + copy_1.resources[2]      # Resources
+    u += (copy_1.army.power("A", 0, 0) + copy_1.army.power("D", 0, copy_1.find_level("Wall")))**0.5     # Army strength
+    u += 200*copy_1.army.units["General"]     # General bonus
+    if copy_1.calc_housing() > 0:
+        u += 100        # Available housing bonus
+    if copy_1.army.units["Spy"] > 0:
+        u += 100        # Spy bonus
+    food = values.farm_prod[copy_1.find_level("Farm")] + values.bakery_prod[copy_1.find_level("Bakery")] - copy_1.army.count()
+    iron = values.iron_prod[copy_1.find_level("Iron Mine")]
+    gold = values.gold_prod[copy_1.find_level("Gold Mine")]
+    u += 2.5*(food + iron) + 10*gold
+    return u
+
+def select_ai_move(city, world):
+    tasks_1 = possible_tasks_npc(city)
+    sorted_tasks = sorted(tasks_1, key= lambda x: utility(city, x, world.turn), reverse = True)
+    weights = [i**world.difficulty for i in range(1, len(sorted_tasks) + 1)].reverse()
+    selected_tasks = choices(sorted_tasks, weights)[0]
+    return selected_tasks
+
+def ai_move(city, world):
+    selected_tasks = select_ai_move(city, world)
+    for task in selected_tasks:
+        city.update_task_endturn(task, world.turn)
+    update_building_slots(city, selected_tasks)
+    city.current_tasks = selected_tasks
+    city.spend_res(city.required_res(selected_tasks))
+
+def npc_move(city, turn):
+    options = possible_tasks_npc(city)
+    weights = list(range(1, len(options)+1)).reverse()
+    selected_tasks = choices(options, weights)[0]
+    for task in selected_tasks:
+        city.update_task_endturn(task, turn)
+    update_building_slots(city, selected_tasks)
+    city.current_tasks = selected_tasks
+    city.spend_res(city.required_res(selected_tasks))
+
+

@@ -1,10 +1,6 @@
 from random import shuffle, sample, uniform, choice, choices
 from math import ceil, floor
-import values
-import pathlib
-import pickle
-import os
-import re
+import copy
 
 
 class Task():
