@@ -1,0 +1,175 @@
+\documentclass[a4paper, 16pt]{article}
+\usepackage[slovene]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\title{City Wars \\ Kratko poročilo}
+\date{April 2022}
+\author{Jure Babnik}
+
+
+\begin{document}
+
+\maketitle
+
+\section{O igri in pravila igre}
+
+Igra je zasnovana na podoben način kot brskalniške igre \textit{Travian}, \textit{Ikariam} in \textit{Vojna plemen}, nekaj navdiha pa jemlje tudi iz drugih strateških iger.
+Igralec v igri razvija svoje mesto tako, da zgradi nove ali izboljša že obstoječe zgradbe, poleg tega pa lahko izuri vojsko. Za to potrebuje surovine, ki jih lahko pridobiva s pomočjo določenih zgradb, 
+ali pa jih ukrade iz nasprotnikovih mest. S svojo vojsko lahko napade druga mesta in jih tudi osvoji. Za zmago je potrebno nadzorovati več kot polovico vseh mest na svetu.
+
+Za razliko od zgoraj omenjenih iger, ki se igrajo v realnem času, City Wars temelji na potezah; vsi igralci poteze opravijo istočasno, izvedejo pa se ko se vsi igralci odločijo za svojo potezo. 
+V vsaki potezi ima igralec v vsakem mestu na voljo 
+do največ \textbf{tri} različne akcije, ki vključujejo gradnjo/nadgradnjo zgradb, urjenje vojske ali napade na druga mesta. Na voljo je 15 različnih zgradb, kjer vsaka od njih 
+opravlja določeno funkcijo in prinese določene koristi, ter 5 različnih enot, ki imajo različne kvalitete (napadalna/obrambna moč, hitrost, nosilnost plena).
+
+\subsection{Surovine}
+
+V igri so tri različne surovine; hrana, železo in zlato. Vse tri se uporabljajo pri gradnji in urjenju. Poleg tega vojska potrebuje hrano za preživetje. Vsaka enota porabi eno enoto hrane na potezo.
+Hrane in železa je na voljo veliko več, kot zlata (zlato služi bolj kot denar, in ne kot surovina/material).
+
+\subseciton{Poteze in akcije}
+
+Vsak igralec ima na voljo 3 akcije vsako potezo (v primeru, da ima pod nadzorom več mest, lahko začne 3 akcije v vsakem mestu). Na voljo so 4 tipi akcij:
+
+\begin{itemize}
+    \item Gradnja - igralec na prazno mesto postavi novo zgradbo
+    \item Nadgradnja - igralec lahko nadgradi (izboljša) že obstoječo zgradbo, do največ stopnje 5
+    \item Urjenje vojske - igralec lahko usposobi dodatne enote (če so v mestu na voljo primerne zgradbe)
+    \item Napad - igralec lahko pošlje enote v napad nad drugo mesto
+\end{itemize}
+
+Vsaka akcija se prične po zaključku poteze. Gradnja in nadgradnja se izvedeta v eni potezi, kar pomeni, da so novonastale oz. nadgrajene zgradbe na voljo že v naslednji potezi.
+Napadi in urjenja pa imajo različen čas trajanja. Čas trajanja (izražen v številu potez) urjenja enot je odvisen od stopnje zgradbe, v kateri se enote urijo, ne pa od količine enot. Prikazan je v spodnji tabeli.
+Trajanje napadov pa je odvisno od oddaljenosti destinacije ter hitrosti najpočasnejše enote, ki sodeluje v napadu.
+
+\begin{table}[]
+    \begin{tabular}{ll|lllll}
+    Zgradba      & Enota             & St. 1 & St. 2 & St. 3 & St. 4 & St. 5 \\ \hline
+    Pehota       & Barake            & 3     & 3     & 2     & 2     & 1     \\
+    Ostrostrelec & Strelišče         & 3     & 3     & 2     & 2     & 1     \\
+    Tank         & Tovarna           & 10    & 6     & 4     & 2     & 1     \\
+    Vohun        & Agencija          & 10    & 6     & 4     & 2     & 1     \\
+    General      & Vojaška akademija & 10    & 6     & 4     & 2     & 1    
+    \end{tabular}
+\end{table}
+
+\subsection{Zgradbe}
+
+Mesta se pojavljajo v treh velikostih, ki omejujejo največje število zgradb. Najmanjša mesta dovoljujejo 6 zgradb, srednje velika 9, in največja 12.
+Ob začetku igre vsak igralec začne v vasi z 12 polji za grajenje. 
+
+Igralci lahko gradijo poljubne zgradbe na poljubnih mestih, edina izjema je zid, ki ima posebej določeno mesto. Ni ga mogoče zgraditi na katerokoli drugo mesto, prav tako pa ni nobene 
+druge zgradbe mogoče zgraditi na mesto, ki je namenjeno zidu. Zgraditi je mogoče le eno zgradbo posameznega tipa. Ker je v igri več različnih zgradb kot je gradbenih polj (tudi v največjih mestih), 
+eno izmed strateških ugank predstavlja tudi izbira zgradb, saj v igri ni mogoče rušenje. Pred gradnjo je zato treba svojo odločitev dobro premistliti.
+
+Vsako zgradbo je mogoče nadgraditi do stopnje 5. Nadgradnja je dražja z vsako stopnjo, vendar pa višji nivo zgradbe prinaša določene koristi.
+
+Vsaka izmed zgradb ima svoje prednosti:
+\begin{itemize}
+    \item Kmetija (\textit{Farm}) - proizvodnja hrane 
+    \item Rudnik železa (\textit{Iron Mine}) - Proizvodnja železa
+    \item Rudnik zlata (\textit{Gold Mine}) - Proizvodnja zlata
+    \item Skladišče (\textit{Warehouse}) - Poveča največjo dovoljeno količino surovin
+    \item Zid (\textit{Wall}) - Obrambni bonus
+    \item Barake (\textit{Training Camp}) - Urjenje pehote   
+    \item Bivališča (\textit{Housing}) - Poveča največjo dovoljeno količino vojske
+    \item Bunker (\textit{Bunker}) - Skrije surovine pred roparji
+    \item Strelišče (\textit{Range}) - Urjenje ostrostrelcev
+    \item Banka (\textit{Bank}) - Poveča največjo dovoljeno količino zlata
+    \item Trezor (\textit{Vault}) - Skrije zlato pred roparji
+    \item Pekarna (\textit{Bakery}) - Dodatna proizvodnja hrane
+    \item Agencija (\textit{Agency}) - Urjenje vohunov
+    \item Tovarna (\textit{Factory}) - Izdelava tankov
+    \item Vojaška akademija (\textit{Military HQ}) - Urjenje generalov
+\end{itemize}
+
+\subsection{Vojska}
+
+V igri je na voljo 5 različnih enot. Vsaka enota ima določeno ceno urjenja oz. izdelave. Poleg tega ima vsaka izmed enot naslednje atribute:
+\begin{itemize}
+    \item Napadalna moč
+    \item Obrambna moč
+    \item Hitrost premikanja (izražena v poljih na potezo, ki jih lahko prehodi)
+    \item Nosilnost (koliko surovin lahko nosijo)
+\end{itemize}
+
+Spodnja tabela prikazuje vse atribute enot in ceno njihovega urjenja oz. izdelave.
+
+\begin{table}[]
+    \begin{tabular}{l|llll|lll}
+    Enota        & Napadalna moč & Obrambna moč & Hitrost premikanja & Nosilnost & Hrana & Železo & Zlato \\ \hline
+    Pehota       & 50            & 25           & 4                  & 100       & 35    & 15     & 0     \\
+    Ostrostrelec & 10            & 70           & 3                  & 75        & 30    & 25     & 0     \\
+    Tank         & 150           & 190          & 1                  & 200       & 150   & 200    & 5     \\
+    Vohun        & 1             & 10           & 7                  & 0         & 100   & 10     & 3     \\
+    General      & 0             & 0            & 1                  & 0         & 1000  & 100    & 100  
+    \end{tabular}
+\end{table}
+
+Vohun se uporablja za ocenjevanje nasprotnikove vojaške moči, saj lahko opazijo sovražnikove enote, brez da bi nasprotnik opazil njih.
+Posebno funkcijo pa ima tudi general, ki v primeru vojaške zmage zavzame nasprotnikovo mesto in igralcu omogoči nadzor nad njim.
+
+\subsection{Napadi}
+
+Igralec ima na voljo 4 različne tipe napadov:
+
+\begin{itemize}
+    \item Polni napad (\textit{Attack}) - enote napadejo z namenom, da pobijejo nasprotnikovo vojsko
+    \item Roparski napad (\textit{Raid}) - enote napadejo z namenom, da ukradejo surovine
+    \item Vohunjenje (\textit{Espionage}) - enote napadejo z namenom, da odkrijejo nasprotnikove vojaške sposobnosti (količino vojske)
+    \item Prevzem (\textit{Conquest}) - enote napadejo z namenom, da pobijejo nasprotnikovo vojsko in prevzamejo nadzor nad mestom
+\end{itemize}
+
+Po vsakem napadu obe mesti prejmeta poročilo, v katerem so napisani podatki o napadalni in obrambni vojski, skupaj z izgubami obeh strani.
+V polnih napadih in prevzemih se vojaki pobijejo, dokler ne ostanejo le še pripadniki ene strani. Pri roparskih napadih se pobijejo v manjšem številu, izgube pa so sorazmerne z 
+razmerjem moči napadalcev in branilcev. V kolikor katere napadalčeve enote preživijo, ukradejo tudi nekaj surovin in jih prinesejo v mesto, od koder prihajajo.
+Na enak način se enote spopadajo tudi pri vohunjenju, vendar pa v primeru, ko obrambno mesto nima prisotnega nobenega lastnega vohuna, do spopada sploh ne pride (v tem primeru branilec sploh ne prejme poročila o bitki).
+
+Za vohunjenje so primerni le vohuni; zato je vohunjenje mogoče izvesti le, če so v poslani vojski prisotni samo vohuni, za 
+prevzem pa more vojska vsebovati vsaj enega generala.
+
+\section{Jezik in knjižnice}
+
+Odločil sem se za uporabo programskega jezika \textit{Python}, saj mi je najbolj domač, igra pa ne zahteva nobenih naprednih grafičnih elementov in je knjižnica 
+\textit{Pygame} več kot dovolj uporabna za moje potrebe. 
+
+\section{Trenutno stanje igre}
+
+Sama igra je že bolj ali manj končana, manjkajo le še malenkosti in pa estetski popravki ter kakšen bug-fix. Definiral sem nekaj razredov in napisal nekaj funkcij,
+nato pa sestavil preprost vmesnik s pomočjo knjižnice \textit{Pygame}. Vmesnik ima v igri štiri različne poglede:
+\begin{itemize}
+    \item Pogled mesta, kjer igralec lahko vidi svoje mesto in upravlja z njim
+    \item Zemljevid, kjer igralec lahko vidi druga mesta
+    \item Poročila, kjer igralec lahko prebere poročila preteklih bitk
+    \item Pregled, kjer igralec lahko vidi vsa svoja mesta in izbere tistega, s katerim želi upravljati
+\end{itemize}
+Vsak izmed njih je bolj ali manj končan, sestavljen iz preprostih oblik in sličic, ki sem jih našel na internetu. Mogoče je tudi shraniti trenutno igro in jo potem nadaljevati
+ob naslednjem igranju. 
+
+Najbolj zanimiv del projekta so računalniški nasprotniki. Do sedaj sem implementiral le navodila za razvoj neodvisnih mest. Želel sem da se obnašajo malce "neumno" in 
+da se razvijajo počasneje kot ostali igralci, kar mi je uspelo na preprost način; v vsaki potezi program poišče vse mogoče poteze, nato pa po naključju izbere eno izmed potez. 
+ 
+
+\section{Nadaljni načrt}
+
+Poleg lepotnih popravkov in podobnega mi je ostal še najtežji del naloge - razviti samostojnega igralca oz. "bot"-a. Želim, da ovrednoti stanje igre le s pomočjo informacij, 
+ki so na voljo tudi uporabniku in na podlagi tega izbere najboljšo možno potezo. Na ta način bi lahko preprosto implementiral tudi različne težavnosti (kjer imajo pri večji 
+težavnosti nasprotniki večjo verjetnost, da izberejo optimalno potezo, pri nižji pa manjšo).
+
+Ideja je, da napišem funkcijo, ki ovrednoti trenutno stanje igre z upoštevanjem sledečih faktorjev:
+\begin{itemize}
+    \item Trenutne zgradbe v vasi
+    \item Trenutna vojska (v vasi in na poti)
+    \item Trenutne surovine na voljo
+    \item Doprinos posamezne poteze
+    \item Zadnja informacija o nasprotnikovi vojski oz. ugibanje
+    \item Morda še drugi
+\end{itemize}
+
+S tem bo moja igra kompletna in pripravljena za igranje.
+
+\end{document}
