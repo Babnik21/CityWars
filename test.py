@@ -1,7 +1,7 @@
 from random import shuffle, sample, uniform, choice, choices
 from math import ceil, floor
 import copy
-
+import math
 
 class Task():
     def __init__(self, type=None, data=None, end_turn=None):
@@ -24,7 +24,8 @@ class Test():
         self.type = "Alpha"
         self.second = f"Jaz sem {self.type}"
 
-print(15//2)
 
 
+x = 1
+print(math.log(x))
 

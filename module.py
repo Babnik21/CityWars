@@ -1,5 +1,5 @@
 from random import choice, shuffle, uniform, choices
-from math import floor, ceil, sqrt
+from math import floor, ceil, sqrt, e
 import values
 import re
 import numpy as np
@@ -7,7 +7,6 @@ import copy
 
 class World():
     def __init__(self, players):
-        self.difficulty = 1
         self.players = players
         self.size = 2 + len(self.players)
         self.cities = []
@@ -54,6 +53,7 @@ class World():
     def next_turn(self):
         shuffle(self.cities)
         for city in self.cities:
+            city.update_powers()
             if re.match("^NPC\s\d+$", city.owner.username):
                 npc_move(city, self.turn)
             elif re.match("^AI\s\d+$", city.owner.username):
@@ -96,6 +96,7 @@ class City():
         self.coords = coords
         self.buildings = {}
         self.points = 1
+        self.powers = 0
         for i in range(size+1):
             self.buildings[i] = Building(slot=i)
         self.army = Army()
@@ -103,6 +104,7 @@ class City():
         self.current_tasks = []
         self.ongoing_tasks = []
         self.reports = reports
+        self.update_powers()
 
     def buildings_to_str(self):
         string = ""
@@ -202,11 +204,17 @@ class City():
         elif task.type == "Train":
             self.army.units[task.data[0]] += task.data[1]
 
+    # Updates attack and defense power
+    def update_powers(self):
+        atk = self.army.power("A", 0, 0)
+        deff = self.army.power("D", 0, self.find_level("Wall"))
+        self.powers = (atk, deff)
+
     # Produces resources
     def update_res(self):
 
         # Add values
-        food = values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")] - self.army.count()
+        food = values.farm_prod[self.find_level("Farm")] + values.bakery_prod[self.find_level("Bakery")]
         iron = values.iron_prod[self.find_level("Iron Mine")]
         gold = values.gold_prod[self.find_level("Gold Mine")]
         # Avoid overflow
@@ -600,24 +608,61 @@ def utility(city, triple, turn):
     for task in triple:
         copy_1.execute(task, turn)
     u = copy_1.points     # Points
-    u += (copy_1.resources[0] + copy_1.resources[1])**0.25 + copy_1.resources[2]      # Resources
+    u += (copy_1.resources[0] + copy_1.resources[1])**0.25 + 10*copy_1.resources[2]      # Resources
     u += (copy_1.army.power("A", 0, 0) + copy_1.army.power("D", 0, copy_1.find_level("Wall")))**0.5     # Army strength
-    u += 200*copy_1.army.units["General"]     # General bonus
-    if copy_1.calc_housing() > 0:
-        u += 100        # Available housing bonus
+    u += 200*(copy_1.army.units["General"]**0.5)    # General bonus
+    u += copy_1.calc_housing()
     if copy_1.army.units["Spy"] > 0:
-        u += 100        # Spy bonus
+        u += 100 + 10*(copy_1.army.units["Spy"] ** 0.5)       # Spy bonus
+    if copy_1.find_slot("Empty") != None:
+        u += 200                                                # Empty building slot bonus
     food = values.farm_prod[copy_1.find_level("Farm")] + values.bakery_prod[copy_1.find_level("Bakery")] - copy_1.army.count()
     iron = values.iron_prod[copy_1.find_level("Iron Mine")]
     gold = values.gold_prod[copy_1.find_level("Gold Mine")]
-    u += 2.5*(food + iron) + 10*gold
+    u += 2.5*(food + iron) + 100*gold
     return u
 
+# Nedokoncano!
+def attack_seletion(city, world):
+    weaker = []
+    for c in world.cities:
+        if c.powers[1] < city.powers[0]:
+            weaker.append(c)
+    if len(weaker) > 0:
+        sorted_weaker = sorted(weaker, key = lambda x: attack_utility(city, x))
+        return sorted_weaker[0]
+    else:
+        return None
+
+def attack_utility(a_city, d_city):
+    remaining = simulate_combat(a_city.army, d_city.powers[1])
+    u = 0
+    if remaining.units["General"] >= 0:
+        u += d_city.points + 1000000    # Conquest bonus (priority!)
+    u += (remaining.power("A", 0, 0) + remaining.power("D", 0, a_city.find_level("Wall")))**0.5     # Remaining army utility
+    if a_city.owner.username == d_city.owner.username:
+        u = -1000000                            # Avoid self attack
+    else:
+        u += 100/distance(a_city, d_city)       #Distance to city
+    return u
+
+def simulate_combat(army, d_power):
+    a_power = army.power("A", 0, 0)
+    if d_power >= a_power:
+        return Army([0,0,0,0,0])
+    else:
+        return army*(1 - d_power/a_power)
+
 def select_ai_move(city, world):
+    selected_tasks = []
     tasks_1 = possible_tasks_npc(city)
+    attack_target = attack_seletion(city, world)
+    if attack_target != None:
+        selected_tasks.append(Task("Move Troops", [city.army, city, attack_target, "Conquest", ], end_turn = 0))
+        tasks_1 = [x for x in tasks_1 if len(x) <= 2]
     sorted_tasks = sorted(tasks_1, key= lambda x: utility(city, x, world.turn), reverse = True)
-    weights = [i**world.difficulty for i in range(1, len(sorted_tasks) + 1)].reverse()
-    selected_tasks = choices(sorted_tasks, weights)[0]
+    weights = [e**i for i in range(1, len(sorted_tasks) + 1)].reverse()
+    selected_tasks += choices(sorted_tasks, weights)[0]
     return selected_tasks
 
 def ai_move(city, world):
