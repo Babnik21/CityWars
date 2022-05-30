@@ -231,7 +231,7 @@ def draw_full_report(win, mouse, report):
 def draw_city_info(win, selected):
     pygame.draw.rect(win,(255,255,255),[23,55,204,504], 2)          # Border
     if isinstance(selected, City):
-        strings = [f"City: City Name", f"Points: {selected.points}", f"Owner: {selected.owner.username}", f"Coords: {selected.coords}", f"Size: {selected.size}"]
+        strings = [f"City: {selected.name}", f"Points: {selected.points}", f"Owner: {selected.owner.username}", f"Coords: {selected.coords}", f"Size: {selected.size}"]
         poss = [(28, 58), (28, 88), (28, 118), (28, 148), (28, 178)]
         draw_text(strings, poss, roboto, (0,0,0))
 
@@ -245,15 +245,10 @@ def draw_map(win, mouse, world, player, topleft=None):
         for j in range(5):
             draw_h_rect(win, mouse, [width/2-350+i*100,height/2-280+j*100,100,100], (0,0,0), (255,250,205), border=1)
             if isinstance(world.map[(topleft[0] + i, topleft[1]+j)], City):
-                if re.match("^NPC\s\d+$", world.map[(topleft[0] + i, topleft[1]+j)].owner.username):
-                    color = (210, 105, 30)
-                elif re.match("^AI\s\d+$", world.map[(topleft[0] + i, topleft[1]+j)].owner.username):
-                    color = (250, 50, 50)
-                else: 
-                    color = (0, 0, 0)
+                color = world.map[(topleft[0] + i, topleft[1]+j)].owner.color
                 draw_image(win, "images/city.png", (width/2-350+i*100,height/2-280+j*100), (100, 100))
                 pygame.draw.rect(win, (255,255,255),[width/2-345+i*100,height/2-278+j*100,90,18])
-                draw_text(["CityName"], [(width/2-340+i*100,height/2-280+j*100)], roboto, color)
+                draw_text([world.map[(topleft[0] + i, topleft[1]+j)].name], [(width/2-343+i*100,height/2-280+j*100)], roboto, color)
                 pygame.draw.ellipse(win, (255, 255, 255), (width/2-330+i*100,height/2-260+j*100, 40, 25))
                 draw_text([str(world.map[(topleft[0] + i, topleft[1]+j)].points)], [(width/2-325+i*100,height/2-255+j*100)], roboto_small, (0,0,0))
             else:
@@ -766,6 +761,8 @@ def main():
                             temp = city.current_tasks[i]
                             res = city.required_res(temp)
                             city.add_res(res)
+                            if temp.type == "Move Troops":
+                                city.army += temp.data[0]
                             city.current_tasks.pop(i)
                             break
                         h += 10 + 20*len(str(city.current_tasks[i]).split("\n"))

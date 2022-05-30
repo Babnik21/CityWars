@@ -1,9 +1,10 @@
-from random import choice, shuffle, uniform, choices
+from random import choice, shuffle, uniform, choices, randint
 from math import floor, ceil, sqrt, e
 import values
 import re
 import numpy as np
 import copy
+import pickle
 
 class World():
     def __init__(self, players):
@@ -26,17 +27,19 @@ class World():
         return f"World of size {self.size*2+1}x{self.size*2+1} with {len(self.cities)} cities. Current turn: {self.turn}"
 
     def start_game(self):
-        for p in self.players:
+        names = values.cities
+        shuffle(names)
+        for p, name in zip(self.players, names):
             if re.match("^NPC\s\d+$", p.username):
-                self.spawn_city(p, choices([6, 9, 12], weights=[0.2, 0.4, 0.4])[0])
+                self.spawn_city(p, choices([6, 9, 12], weights=[0.2, 0.4, 0.4])[0], name)
             else:
-                self.spawn_city(p, 12)
+                self.spawn_city(p, 12, name)
         self.win_con = len(self.players)//2 + 1
 
     #Adds a new city on the map (returns coords for now)
-    def spawn_city(self, player, size):
+    def spawn_city(self, player, size, name):
         coords = choice(self.empty_coords)
-        city = City(player, size, coords, [])
+        city = City(player, size, coords, [], name)
         player.add(city)
         self.cities.append(city)
         self.empty_coords.remove(coords)
@@ -44,9 +47,7 @@ class World():
         return coords
 
     def game_over(self):
-        print(self.win_con, len(self.players))
         for p in self.players:
-            print(p.username, len(p.cities))
             if len(p.cities) >= self.win_con:
                 self.winner = p.username
 
@@ -71,11 +72,18 @@ class World():
             city.reports.sort()
         self.turn += 1
         self.game_over()
+        print(f"Starting turn {self.turn}")
 
 class Player():
     def __init__(self, username, cities=[]):
         self.username = username
         self.cities = cities
+        if re.match("^NPC\s\d+$", self.username):
+            self.color = (210, 105, 30)
+        elif re.match("^AI\s\d+$", self.username):
+            self.color = values.colors[int(self.username[-1])]
+        else:
+            self.color = (0, 0, 0)
 
     def __str__(self):
         return self.username
@@ -90,7 +98,7 @@ class Player():
         self.cities.append(city)
 
 class City():
-    def __init__(self, owner, size, coords, reports):
+    def __init__(self, owner, size, coords, reports, name):
         self.owner = owner
         self.size = size
         self.coords = coords
@@ -104,6 +112,7 @@ class City():
         self.current_tasks = []
         self.ongoing_tasks = []
         self.reports = reports
+        self.name = name
         self.update_powers()
 
     def buildings_to_str(self):
@@ -113,10 +122,10 @@ class City():
         return string
 
     def __repr__(self):
-        return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
+        return f"{self.name} owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __str__(self):
-        return f"City owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
+        return f"{self.name} owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __eq__(self, other):
         if isinstance(other, City):
@@ -234,10 +243,14 @@ class City():
 
     # Returns loot and removes res form def village (for now)
     def steal_res(self, cap):
-        ratio_f_1 = self.resources[0]/(self.resources[0]+self.resources[1])
-        ratio_i_1 = self.resources[1]/(self.resources[0]+self.resources[1])
-        available_f = max(0, self.resources[0] - floor(values.bunker_capacity[self.find_level("Bunker")]*ratio_f_1))
-        available_i = max(0, self.resources[1] - floor(values.bunker_capacity[self.find_level("Bunker")]*ratio_i_1))
+        if self.resources[0]+self.resources[1] == 0:
+            available_f = 0
+            available_i = 0
+        else:
+            ratio_f_1 = self.resources[0]/(self.resources[0]+self.resources[1])
+            ratio_i_1 = self.resources[1]/(self.resources[0]+self.resources[1])
+            available_f = max(0, self.resources[0] - floor(values.bunker_capacity[self.find_level("Bunker")]*ratio_f_1))
+            available_i = max(0, self.resources[1] - floor(values.bunker_capacity[self.find_level("Bunker")]*ratio_i_1))
         available_g = max(0, self.resources[2] - values.vault_capacity[self.find_level("Vault")])
         if available_g + available_f + available_i <= cap:
             loot = [available_f, available_i, available_g]
@@ -405,7 +418,7 @@ class Report():
         return f"{self.type} on {self.d_city.coords}, turn {self.turn}."
 
     def __str__(self):
-        headline = f"{self.type} on {self.d_city.coords}, turn {self.turn}."
+        headline = f"{self.type} by {self.a_city.name} {self.a_city.coords} on {self.d_city.name} ({self.d_city.coords}), turn {self.turn}."
         if not self.read:
             headline = "UNREAD -- " + headline
         a_army = f"Attacking army: \nInfantryman: {self.a_army.units['Infantryman']}\nSniper: {self.a_army.units['Sniper']}\nTank: {self.a_army.units['Tank']}\nSpy: {self.a_army.units['Spy']}\nGeneral: {self.a_army.units['General']}."
@@ -424,7 +437,7 @@ class Report():
         return self.turn > other.turn
 
 class Army():
-    def __init__(self, units = [3,0,0,0,0]):
+    def __init__(self, units = [0,0,0,0,0]):
         self.units = {
             "Infantryman": units[0],
             "Sniper": units[1],
@@ -541,14 +554,18 @@ def possible_tasks_npc(city):
             building_slots.append(b.slot)
         elif b.level < 5:
             tasks.append(Task("Upgrade", data=[b.type], end_turn=0))
-        if b.type in ["Training Camp", "Range", "Factory", "Agency", "Military HQ"]:
-            troops = 1
-            while True:
-                task = Task("Train", data = [values.units_trained_in[b.type], troops], end_turn=0)
+        if b.type in ["Training Camp", "Range", "Factory", "Agency", "Military HQ"] and re.match("^AI\s\d+$", city.owner.username):
+            unit = values.units_trained_in[b.type]
+            troop_cost = values.unit_costs[unit]
+            if troop_cost[2] == 0:
+                max_troops = floor(min([city.resources[0]/troop_cost[0], city.resources[1]/troop_cost[1]]))
+            else:
+                max_troops = floor(min([city.resources[0]/troop_cost[0], city.resources[1]/troop_cost[1], city.resources[2]/troop_cost[2]]))
+            for i in [0.1*max_troops, 0.2*max_troops, 0.5*max_troops, max_troops]:
+                task = Task("Train", data = [unit, floor(i)], end_turn=0)
                 cost = city.required_res(task)
-                if city.enough_res(cost) and space >= troops:
+                if city.enough_res(cost) and space >= i:
                     tasks.append(task)
-                    troops = ceil((1 + troops)*1.8)
                 else:
                     break
 
@@ -597,9 +614,10 @@ def update_building_slots(city, tasks):
     slots = [i for i in city.buildings if city.buildings[i].type == "Empty" and i != 0]
     for task in tasks:
         if task.type == "Build":
-            slot = choice(slots)
             if task.data[0] == "Wall":
                 slot = 0
+            else:
+                slot = choice(slots)
             task.data = [task.data[0], slot]
 
 def utility(city, triple, turn):
@@ -609,41 +627,42 @@ def utility(city, triple, turn):
         copy_1.execute(task, turn)
     u = copy_1.points     # Points
     u += (copy_1.resources[0] + copy_1.resources[1])**0.25 + 10*copy_1.resources[2]      # Resources
-    u += (copy_1.army.power("A", 0, 0) + copy_1.army.power("D", 0, copy_1.find_level("Wall")))**0.5     # Army strength
+    u += copy_1.army.power("A", 0, 0)**0.75 + copy_1.army.power("D", 0, copy_1.find_level("Wall"))**0.5     # Army strength
     u += 200*(copy_1.army.units["General"]**0.5)    # General bonus
     u += copy_1.calc_housing()
     if copy_1.army.units["Spy"] > 0:
         u += 100 + 10*(copy_1.army.units["Spy"] ** 0.5)       # Spy bonus
     if copy_1.find_slot("Empty") != None:
         u += 200                                                # Empty building slot bonus
-    food = values.farm_prod[copy_1.find_level("Farm")] + values.bakery_prod[copy_1.find_level("Bakery")] - copy_1.army.count()
+    food = values.farm_prod[copy_1.find_level("Farm")] + values.bakery_prod[copy_1.find_level("Bakery")]
     iron = values.iron_prod[copy_1.find_level("Iron Mine")]
     gold = values.gold_prod[copy_1.find_level("Gold Mine")]
     u += 2.5*(food + iron) + 100*gold
     return u
 
-# Nedokoncano!
 def attack_seletion(city, world):
     weaker = []
+    stronger = []
     for c in world.cities:
-        if c.powers[1] < city.powers[0]:
-            weaker.append(c)
-    if len(weaker) > 0:
-        sorted_weaker = sorted(weaker, key = lambda x: attack_utility(city, x))
-        return sorted_weaker[0]
-    else:
-        return None
+        if c.owner.username != city.owner.username and c.owner.username != "Tester":
+            if c.powers[1] < city.powers[0] and c.owner.username != world.players[0].username:
+                weaker.append(c)
+            else:
+                stronger.append(c)
+    i = randint(1, 50)
+    if i%2 == 0 and len(weaker) > 0:
+        return max(weaker, key = lambda x: attack_utility(city, x))
+    elif i == 1 and len(stronger) > 0:
+        return choice(stronger)
 
 def attack_utility(a_city, d_city):
     remaining = simulate_combat(a_city.army, d_city.powers[1])
     u = 0
     if remaining.units["General"] >= 0:
-        u += d_city.points + 1000000    # Conquest bonus (priority!)
+        u += d_city.points + 100000    # Conquest bonus (priority!)
     u += (remaining.power("A", 0, 0) + remaining.power("D", 0, a_city.find_level("Wall")))**0.5     # Remaining army utility
-    if a_city.owner.username == d_city.owner.username:
-        u = -1000000                            # Avoid self attack
-    else:
-        u += 100/distance(a_city, d_city)       #Distance to city
+    u += 100/distance(a_city, d_city)       #Distance to city
+    u += a_city.army.count()                #Clear housing space bonus
     return u
 
 def simulate_combat(army, d_power):
@@ -657,11 +676,14 @@ def select_ai_move(city, world):
     selected_tasks = []
     tasks_1 = possible_tasks_npc(city)
     attack_target = attack_seletion(city, world)
-    if attack_target != None:
-        selected_tasks.append(Task("Move Troops", [city.army, city, attack_target, "Conquest", ], end_turn = 0))
+    if attack_target != None and city.army != 0:
+        if city.army.units["General"] > 0:
+            selected_tasks.append(Task("Move Troops", [city.army, city, attack_target, "Conquest", ], end_turn = 0))
+        else:
+            selected_tasks.append(Task("Move Troops", [city.army, city, attack_target, "Raid", ], end_turn = 0))
         tasks_1 = [x for x in tasks_1 if len(x) <= 2]
     sorted_tasks = sorted(tasks_1, key= lambda x: utility(city, x, world.turn), reverse = True)
-    weights = [e**i for i in range(1, len(sorted_tasks) + 1)].reverse()
+    weights = [e**(-i) for i in range(1, len(sorted_tasks) + 1)]
     selected_tasks += choices(sorted_tasks, weights)[0]
     return selected_tasks
 
@@ -669,9 +691,12 @@ def ai_move(city, world):
     selected_tasks = select_ai_move(city, world)
     for task in selected_tasks:
         city.update_task_endturn(task, world.turn)
+        if task.type == "Move Troops":
+            city.army -= task.data[0]
     update_building_slots(city, selected_tasks)
     city.current_tasks = selected_tasks
-    city.spend_res(city.required_res(selected_tasks))
+    cost = city.required_res(selected_tasks)
+    city.spend_res(cost)
 
 def npc_move(city, turn):
     options = possible_tasks_npc(city)
@@ -683,4 +708,20 @@ def npc_move(city, turn):
     city.current_tasks = selected_tasks
     city.spend_res(city.required_res(selected_tasks))
 
+def simulate(n_turns, n_ais):
+    players = [Player("Tester", [])]
+    players += [Player(f"AI {i}", []) for i in range(n_ais)]
+    npc_count = len(players)*6
+    npcs = [Player(f"NPC {i}", []) for i in range(npc_count)]
+    world = World(players)
+    world.players += npcs
+    world.start_game()
 
+    for _ in range(n_turns):
+        world.next_turn()
+
+    with open(f"saves/{n_turns}", "wb") as file:
+        pickle.dump(world, file)
+    
+#for (i, j) in [(50, 7), (100, 5), (150, 4), (200, 3), (250, 3)]:
+#    simulate(i, j)

@@ -26,6 +26,10 @@ class Test():
 
 
 
-x = 1
-print(math.log(x))
+def u(x):
+    return x*x
+
+lst = [-1, 0, 2]
+
+print(sorted(lst, key = lambda x: u(x), reverse= True))
 
