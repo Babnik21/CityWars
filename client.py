@@ -488,7 +488,7 @@ def draw_endgame(win, mouse, world):
 
 
 # Updates display (GUI)
-def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, text, player, savename):
+def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, text, player, savename, fullscreen):
     if view == "Start menu":
         win.fill((255, 255, 255))
         draw_start_menu(win, mouse)
@@ -565,6 +565,8 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
 
 # Main function
 def main():
+    global win
+    fullscreen = False
     world, player, city, topleft, selected, task, savename = None, None, None, None, None, None, "foo"
     run = True
     clock = pygame.time.Clock()
@@ -576,7 +578,7 @@ def main():
     while run:
         clock.tick(60)
         mouse = pygame.mouse.get_pos()
-        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, num, player, savename)
+        redraw_window(win, view, mouse, world, selected, city, topleft, task, err, page, username, num, player, savename, fullscreen)
         
         for event in pygame.event.get():
             
@@ -588,6 +590,14 @@ def main():
                     username = text_prompt(username, event)
                 elif view == "Save menu":
                     savename = text_prompt(savename, event)
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F11:
+                    if not fullscreen:
+                        win = pygame.display.set_mode((width, height), pygame.FULLSCREEN)
+                    else:
+                        win = pygame.display.set_mode((width, height))
+                    fullscreen = not fullscreen
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # Changing view / quitting

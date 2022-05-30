@@ -708,7 +708,7 @@ def npc_move(city, turn):
     city.current_tasks = selected_tasks
     city.spend_res(city.required_res(selected_tasks))
 
-def simulate(n_turns, n_ais):
+def simulate(n_turns, n_ais, nth_attempt):
     players = [Player("Tester", [])]
     players += [Player(f"AI {i}", []) for i in range(n_ais)]
     npc_count = len(players)*6
@@ -720,8 +720,9 @@ def simulate(n_turns, n_ais):
     for _ in range(n_turns):
         world.next_turn()
 
-    with open(f"saves/{n_turns}", "wb") as file:
+    with open(f"saves/{n_turns}-{nth_attempt}", "wb") as file:
         pickle.dump(world, file)
     
-#for (i, j) in [(50, 7), (100, 5), (150, 4), (200, 3), (250, 3)]:
-#    simulate(i, j)
+for (i, j) in [(50, 7), (100, 5), (150, 4), (200, 3), (250, 3)]:
+    for k in range(1, 6):
+        simulate(i, j, k)
