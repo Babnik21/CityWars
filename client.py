@@ -293,7 +293,7 @@ def draw_actions(win, selected, view, player):
     draw_text(strings, poss, pacifico, (0,0,0))
 
     # Draws menu where player chooses troops --- Make it display destination as well!!!!!
-def draw_attack_menu(win, mouse, city, task):
+def draw_attack_menu(win, mouse, city, task, err):
     pygame.draw.rect(win,(0,0,0),[width/2-352,height/2-282,704,504], 2)         # Border
     for key, i in zip(task.data[0].units, range(5)):
         # Unit names and counts
@@ -309,6 +309,8 @@ def draw_attack_menu(win, mouse, city, task):
         strings += ["-1", "0", "+1", "+10", "+100", "MAX"]
         poss += [(width/2-85, height/2-235 + 95*i), (width/2-15, height/2-235 + 95*i), (width/2+50, height/2-235 + 95*i),(width/2+115, height/2-235 + 95*i),(width/2+180, height/2-235 + 95*i),(width/2+250, height/2-235 + 95*i)]
         draw_text(strings, poss, roboto, (0,0,0))
+    
+    draw_text([err], [(width-210, 570)], roboto, (255, 0, 0))       # Error
         
     # Draws start menu for setting up and starting a game
 def draw_start_menu(win, mouse):
@@ -547,7 +549,7 @@ def redraw_window(win, view, mouse, world, selected, city, topleft, task, err, p
         draw_current_turn(win, world.turn)
     elif view == "Troop select":
         win.fill((0,0,255))
-        draw_attack_menu(win, mouse, city, task)
+        draw_attack_menu(win, mouse, city, task, err)
         draw_tasks(win, mouse, city)
         draw_bottom_menu(win, mouse, (100, 100, 255))
         draw_actions(win, selected, view, player)
@@ -684,7 +686,7 @@ def main():
                             if task.data[3] == "Espionage":                                                                                     # Untested change here! 
                                 for unit in task.data[0].units:
                                     if unit == "Spy" and task.data[0].units[unit] == 0:
-                                        err = "Must have at least one spy!"
+                                        err = "Must contain a spy!"
                                         break
                                     elif unit != "Spy" and task.data[0].units[unit] > 0:
                                         err = "Only spies can spy!"
