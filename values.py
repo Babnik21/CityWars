@@ -69,11 +69,11 @@ points = {
 
 farm_prod = [10, 45, 130, 310, 750, 1600]
 iron_prod = [10, 40, 100, 300, 740, 1500]
-gold_prod = [0, 2, 4, 7, 12, 20]
+gold_prod = [0, 3, 7, 12, 20, 50]
 bakery_prod = [0, 1000, 2500, 4000, 7500, 12000]
 
 bank_capacity = [10, 50, 140, 330, 580, 980]
-warehouse_capacity = [300, 1000, 2100, 4600, 8900, 15000]
+warehouse_capacity = [300, 1000, 3100, 7600, 18500, 40000]
 bunker_capacity = [0, 200, 500, 1000, 2000, 5000]
 housing_capacity = [75, 150, 425, 1100, 3600, 12500]
 vault_capacity = [0, 20, 50, 100, 200, 500]

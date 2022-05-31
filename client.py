@@ -149,7 +149,7 @@ def draw_city(win, mouse, city):
 
     # Draws city points
 def draw_points(city):
-    draw_text([f"Points: {city.points}"], [(250, 25)], roboto, (0,0,0))
+    draw_text([f"{city.name} - Points: {city.points}"], [(250, 25)], roboto, (0,0,0))
 
     # Draws tasks
 def draw_tasks(win, mouse, city):
@@ -681,11 +681,29 @@ def main():
                             selected, task, err = None, None, ""
                     elif view == "Troop select":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
-                            city.update_task_endturn(task, world.turn)
-                            city.current_tasks.append(task)
-                            city.army -= task.data[0]
-                            selected, task, err = None, None, ""
-                            view = "City"
+                            if task.data[3] == "Espionage":                                                                                     # Untested change here! 
+                                for unit in task.data[0].units:
+                                    if unit == "Spy" and task.data[0].units[unit] == 0:
+                                        err = "Must have at least one spy!"
+                                        break
+                                    elif unit != "Spy" and task.data[0].units[unit] > 0:
+                                        err = "Only spies can spy!"
+                                        break
+                                else:
+                                    city.update_task_endturn(task, world.turn)
+                                    city.current_tasks.append(task)
+                                    city.army -= task.data[0]
+                                    selected, task, err = None, None, ""
+                                    view = "City"
+                            elif task.data[3] == "Conquest":
+                                if task.data[0].units["General"] == 0:
+                                    err = "Must have at least one general!"
+                                else:
+                                    city.update_task_endturn(task, world.turn)
+                                    city.current_tasks.append(task)
+                                    city.army -= task.data[0]
+                                    selected, task, err = None, None, ""
+                                    view = "City"
                     elif view == "Overview":
                         if width/2-300 <= mouse[0] <= width/2-150 and height-100 <= mouse[1] <= height-50:
                             city = selected
@@ -894,7 +912,7 @@ def main():
                             if width/2-350+i*100 <= mouse[0] <= width/2-250+i*100 and height/2-280+j*100 <= mouse[1] <= height/2-180+j*100:
                                 if world.map[(topleft[0]+i,topleft[1]+j)] not in [f"Empty{i}" for i in range(1,5)]:
                                     selected = world.map[(topleft[0]+i,topleft[1]+j)]
-                                    print(selected)
+                                    selected.console_log()
                     # Map movement
                     if width-150 <= mouse[0] <= width-100 and height-202 <= mouse[1] <= height-152:
                         if topleft[1] > -world.size:

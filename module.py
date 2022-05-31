@@ -125,7 +125,7 @@ class City():
         return f"{self.name} owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __str__(self):
-        return f"{self.name} owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
+        return f"{self.name} owned by {self.owner} at {self.coords}. Current tasks: {len(self.current_tasks)}" # \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str()
 
     def __eq__(self, other):
         if isinstance(other, City):
@@ -151,6 +151,9 @@ class City():
             if self.buildings[b].type == building:
                 return self.buildings[b].level
         return 0
+
+    def console_log(self):
+        print(f"{self.name} owned by {self.owner} at {self.coords}. \nArmy: \n" + str(self.army) + "\nBuildings: \n" + self.buildings_to_str())
 
     # Finds topleft coords for map viewing
     def topleft_coords(self, worldsize):
@@ -723,6 +726,6 @@ def simulate(n_turns, n_ais, nth_attempt):
     with open(f"saves/{n_turns}-{nth_attempt}", "wb") as file:
         pickle.dump(world, file)
     
-for (i, j) in [(50, 7), (100, 5), (150, 4), (200, 3), (250, 3)]:
+'''for (i, j) in [(50, 7), (100, 5), (150, 4), (200, 3), (250, 3)]:
     for k in range(1, 6):
-        simulate(i, j, k)
+        simulate(i, j, k)'''

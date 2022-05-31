@@ -26,10 +26,9 @@ class Test():
 
 
 
-def u(x):
-    return x*x
+dict = {"a": 1,
+        "b": 2}
 
-lst = [-1, 0, 2]
-
-print(sorted(lst, key = lambda x: u(x), reverse= True))
+for key in dict:
+    print(key, dict[key])
 
